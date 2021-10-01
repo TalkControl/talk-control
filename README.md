@@ -1,5 +1,13 @@
 # TalkControl
 
+![version](https://img.shields.io/github/package-json/v/sfeir-open-source/talk-control?color=blue)
+![license](https://img.shields.io/github/license/sfeir-open-source/talk-control)
+![maintained](https://img.shields.io/maintenance/yes/2020)
+![open issues](https://img.shields.io/github/issues-raw/sfeir-open-source/talk-control)
+
+![master](https://github.com/sfeir-open-source/talk-control/workflows/master/badge.svg?branch=master)
+![develop](https://github.com/sfeir-open-source/talk-control/workflows/develop/badge.svg?branch=develop)
+
 This project aims to make speakers' life easier by supplying an app to remotely control their slideshow.
 
 ## Getting started
@@ -33,9 +41,9 @@ General instructions on _how to contribute_ can be found in the [CONTRIBUTING](C
 
 ## Troubleshoot
 
-In case of `Error: listen EADDRINUSE :::3000`, execute:
+In case of `Error: listen EADDRINUSE :::3001`, execute:
 
 ```bash
-lsof -i :3000
+lsof -i :3001
 kill -9 <PID>
 ```

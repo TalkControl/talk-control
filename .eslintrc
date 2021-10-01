@@ -8,7 +8,8 @@
     },
     "plugins": [
         "mocha",
-        "jsdoc"
+        "jsdoc",
+        "prettier"
     ],
     "extends": [
         "eslint:recommended",
@@ -18,9 +19,11 @@
     ],
     "globals": {
     },
+    "parser": "babel-eslint",
     "parserOptions": {
         "sourceType": "module",
-        "ecmaVersion": 2018
+        "ecmaVersion": 2018,
+        "allowImportExportEverywhere": true
     },
     "rules": {
         "no-console": "off",
@@ -41,6 +44,8 @@
         "semi": [
             "error",
             "always"
-        ]
+        ],
+        "mocha/no-setup-in-describe": "off",
+        "prettier/prettier": ["error"]
     }
 }

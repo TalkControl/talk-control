@@ -1,3 +1,4 @@
+import { createTcStore } from '@server/store';
 /* eslint-disable no-unused-vars */
 
 /**
@@ -5,6 +6,10 @@
  * @class GenericEngine
  */
 export class GenericEngine {
+    constructor() {
+        this.store = createTcStore();
+    }
+
     /**
      * Initialize the engine
      *
@@ -18,6 +23,13 @@ export class GenericEngine {
      * @param {{key: string}} event - Key pressed
      */
     handleInput({ key }) {}
+
+    /**
+     * Dispatch correct actions depending on the touch direction
+     *
+     * @param {{direction: string}} event - Touch direction
+     */
+    handleTouch({ direction }) {}
 
     /**
      * Tell if two slides are equal

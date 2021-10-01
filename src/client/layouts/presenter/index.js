@@ -1,25 +1,21 @@
 'use strict';
 
-import { TalkControlMaster } from '../../talk-control-master/talk-control-master.js';
-import config from '@config/config.json';
+import './index.css';
+import 'bulma/css/bulma.min.css';
+import 'lit-fontawesome/css/font.css';
+import '@client/web-components/slide-view/slide-view.js';
+import '@client/web-components/loader/loader.js';
+import '@client/web-components/magic-info-tutorial/magic-info-tutorial.js';
+import '@client/web-components/url-form/url-form.js';
+import '@client/web-components/clock/clock.js';
+import '@client/web-components/timer/timer.js';
+import '@client/web-components/notes/notes.js';
+import '@client/web-components/menu-navigation/menu-navigation.js';
+import '@client/web-components/menu-plugins/menu-plugins.js';
+import '@plugins/input/touch-pointer/components/touch-pointer-settings.js';
+import '@plugins/input/touch-pointer/components/touch-pointer-mask.js';
+import { bootstrapTcController } from '@client/tc-controller/bootstrap';
 
 window.addEventListener('DOMContentLoaded', function() {
-    addEventListener('url-changed', event => {
-        const url = event.detail.url;
-        if (url) {
-            const slideViews = document.querySelectorAll('tc-slide');
-            const urlForm = document.querySelector('tc-url-form');
-            const presenterView = document.querySelector('#presenter-view');
-
-            slideViews.forEach(slideView => {
-                slideView.url = url;
-                slideView.classList.remove('is-hidden');
-            });
-            urlForm.classList.add('is-hidden');
-            presenterView.classList.remove('is-hidden');
-        }
-    });
-
-    const talkControlMaster = new TalkControlMaster(config.tcServer.url);
-    talkControlMaster.init();
+    bootstrapTcController();
 });

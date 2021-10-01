@@ -1,4 +1,3 @@
-import store from '../store';
 import { init, gotoSlide } from '../store/actions';
 import { GenericEngine } from './generic-server-engine';
 
@@ -8,27 +7,20 @@ import { GenericEngine } from './generic-server-engine';
  * @augments GenericEngine
  */
 export class RevealEngine extends GenericEngine {
-    constructor() {
-        super();
-        // Binding this because they might be given as callback for some events
-        this.handleInput = this.handleInput.bind(this);
-        this.init = this.init.bind(this);
-    }
-
     /**
      * Initialize the engine
      *
      * @param {*} params - Needed params to initialize the engine
      */
     init(params) {
-        store.dispatch(init({ ...params, currentSlide: { h: 0, v: 0, f: -1 } }));
+        this.store.dispatch(init({ ...params, currentSlide: { h: 0, v: 0, f: -1 } }));
     }
 
     /**
      * @param {{key: string}} event - Key pressed
      */
     handleInput({ key }) {
-        const { currentSlide, slides } = store.getState();
+        const { currentSlide, slides } = this.store.getState();
         const currentSlideIndex = slides.findIndex(s => this.slideEquals(s, currentSlide, false));
         const { fMax } = slides[currentSlideIndex];
         const nextVerticalSlide = slides.find(slide => currentSlide.h === slide.h && slide.v === currentSlide.v + 1);
@@ -53,7 +45,50 @@ export class RevealEngine extends GenericEngine {
                 if (currentSlide.f < fMax - 1) this._nextFragment(currentSlide);
                 else if (nextVerticalSlide) this._nextVerticalSlide(currentSlide);
                 break;
+            case 'pageUp':
+                if (currentSlide.f > -1) this._prevFragment(currentSlide);
+                else if (prevVerticalSlide) this._prevSlide(prevVerticalSlide);
+                else if (prevHorizontalSlide) this._prevSlide(prevHorizontalSlide);
+                break;
+            case 'pageDown':
             case 'space':
+                if (currentSlide.f < fMax - 1) this._nextFragment(currentSlide);
+                else if (nextVerticalSlide) this._nextVerticalSlide(currentSlide);
+                else if (nextHorizontalSlide) this._nextHorizontalSlide(currentSlide);
+                break;
+        }
+    }
+
+    /**
+     * @param {{direction: string}} event - Touch direction
+     */
+    handleTouch({ direction }) {
+        const { currentSlide, slides } = this.store.getState();
+        const currentSlideIndex = slides.findIndex(s => this.slideEquals(s, currentSlide, false));
+        const { fMax } = slides[currentSlideIndex];
+        const nextVerticalSlide = slides.find(slide => currentSlide.h === slide.h && slide.v === currentSlide.v + 1);
+        const nextHorizontalSlide = slides.find(slide => currentSlide.h + 1 === slide.h);
+        const prevVerticalSlide = slides.find(slide => currentSlide.h === slide.h && slide.v === currentSlide.v - 1);
+        const prevHorizontalSlide = slides.find(slide => currentSlide.h - 1 === slide.h);
+
+        switch (direction) {
+            case 'left':
+                if (currentSlide.f < fMax - 1) this._nextFragment(currentSlide);
+                else if (nextHorizontalSlide) this._nextHorizontalSlide(currentSlide);
+                break;
+            case 'right':
+                if (currentSlide.f > -1) this._prevFragment(currentSlide);
+                else if (prevHorizontalSlide) this._prevSlide(prevHorizontalSlide);
+                break;
+            case 'up':
+                if (currentSlide.f < fMax - 1) this._nextFragment(currentSlide);
+                else if (nextVerticalSlide) this._nextVerticalSlide(currentSlide);
+                break;
+            case 'down':
+                if (currentSlide.f > -1) this._prevFragment(currentSlide);
+                else if (prevVerticalSlide) this._prevSlide(prevVerticalSlide);
+                break;
+            case 'none':
                 if (currentSlide.f < fMax - 1) this._nextFragment(currentSlide);
                 else if (nextVerticalSlide) this._nextVerticalSlide(currentSlide);
                 else if (nextHorizontalSlide) this._nextHorizontalSlide(currentSlide);
@@ -100,6 +135,6 @@ export class RevealEngine extends GenericEngine {
     }
 
     _gotoSlide(slide) {
-        store.dispatch(gotoSlide(slide));
+        this.store.dispatch(gotoSlide(slide));
     }
 }

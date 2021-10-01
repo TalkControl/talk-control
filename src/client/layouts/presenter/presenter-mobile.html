@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>Presenter view</title>
+    </head>
+    <body>
+        <section id="header" style="height: 8vh">
+            <div class="pl-1"><tc-menu-navigation></tc-menu-navigation></div>
+            <div><tc-timer></tc-timer></div>
+            <div class="pr-1"><tc-menu-plugins></tc-menu-plugins></div>
+        </section>
+        <div id="placeholder1" class="mobile-half-screen-height">
+            <article class="message is-light mobile-half-screen-height mb-0">
+                <div class="message-header">
+                    <p>Notes</p>
+                </div>
+                <div class="message-body">
+                    <tc-notes></tc-notes>
+                </div>
+            </article>
+        </div>
+        <tc-loader>
+            <section slot="success" class="current-mobile mobile-half-screen-height px-0 py-0">
+                <tc-slide id="currentSlide" focus></tc-slide>
+                <div id="placeholder2"/>
+            </section>
+            <section slot="error">
+                <div class="container is-max-desktop">
+                    <tc-magic-info></tc-magic-info>
+                </div>
+            </section>
+        </tc-loader>
+    </body>
+</html>

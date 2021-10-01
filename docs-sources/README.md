@@ -1,5 +1,7 @@
-# Talk Control
-Welcome on TalkControl documentation. You can find a technical documentation [here](/developers/), instructions on how to use it [here](/users/) and a JsDoc [here](/developers/code/).
+# TalkControl
+Welcome on TalkControl documentation.
+
+You can find a technical documentation [here](https://github.com/sfeir-open-source/talk-control/tree/master/docs-sources/developers), instructions on how to use it [here](https://github.com/sfeir-open-source/talk-control/tree/master/docs-sources/users) and a JsDoc [here](https://github.com/sfeir-open-source/talk-control/tree/master/docs-sources/developers/code).
 
 ## Description
 
@@ -29,7 +31,7 @@ It is composed by three main parts:
 
 ### Technology stack
 
-This app is written in plain javascript, tested with mocha and chai and bundled with parcelJs.
+This app is written in plain javascript, uses web components, is tested with mocha and chai and bundled with parcelJs.
 
 ### Status
 

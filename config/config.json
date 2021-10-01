@@ -1,8 +1,41 @@
 {
-    "tcServer": {
-        "url": "http://localhost:3000"
+    "ngrok": {
+        "authToken": ""
     },
-    "tcSlave": {
-        "keysBlocked": ["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "Space"]
+    "tcServer": {
+        "urls": {
+            "external": "",
+            "local": "http://localhost:3001"
+        },
+        "port": 3001
+    },
+    "tcController": {
+        "urls": {
+            "external": "",
+            "local": "http://localhost:3000"
+        },
+        "port": 3000
+    },
+    "tcShowcase": {
+        "urls": {
+            "external": "",
+            "local": "http://127.0.0.1:3002"
+        },
+        "port": 3002
+    },
+    "tcComponent": {
+        "keysBlocked": [
+            "ArrowDown",
+            "ArrowUp",
+            "ArrowLeft",
+            "ArrowRight",
+            "PageUp",
+            "PageDown",
+            "Space"
+        ]
+    },
+    "logger": {
+        "redux": false,
+        "eventBusEvents": false
     }
 }
