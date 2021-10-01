@@ -5,7 +5,7 @@ import 'lit-fontawesome/css/font.css';
 import './index.css';
 import '@client/web-components/slide-view/slide-view.js';
 import '@client/web-components/loader/loader.js';
-import '@client/web-components/magic-info/magic-info.js';
+import '@client/web-components/magic-info-tutorial/magic-info-tutorial.js';
 import '@client/web-components/clock/clock.js';
 import '@client/web-components/menu-navigation/menu-navigation.js';
 import '@client/web-components/menu-plugins/menu-plugins.js';
