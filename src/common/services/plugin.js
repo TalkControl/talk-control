@@ -16,15 +16,17 @@ function activateOnController(pluginName, controller) {
         .then(plugin => {
             if (plugin.instance.usedByAComponent) {
                 // Plugins used by a component and need tc-component (ex: keyboard)
-                controller.componentChannel.on(plugin.instance.type, event => controller.serverChannel.broadcast(plugin.instance.type, event));
-                controller.componentChannel.broadcast('activatePlugin', { pluginName });
+                controller.controllerComponentChannel.on(plugin.instance.type, event =>
+                    controller.controllerServerChannel.broadcast(plugin.instance.type, event)
+                );
+                controller.controllerComponentChannel.broadcast('activatePlugin', { pluginName });
                 return;
             }
 
             // Other plugins like bluetooth devices
             if (!plugin.instance.initialized) {
                 plugin.instance.init();
-                plugin.instance.onEvent(event => controller.serverChannel.broadcast(plugin.instance.type, event));
+                plugin.instance.onEvent(event => controller.controllerServerChannel.broadcast(plugin.instance.type, event));
             }
         })
         .catch(e => console.error('Unable to load plugin module', e));
@@ -54,7 +56,7 @@ function activateOnComponent(pluginName, component) {
         .then(plugin => {
             if (!plugin.instance.initialized) {
                 plugin.instance.init();
-                plugin.instance.onEvent((type, event) => component.channel.broadcast(type, event));
+                plugin.instance.onEvent((type, event) => component.controllerComponentChannel.broadcast(type, event));
             }
         })
         .catch(e => console.error('Unable to load plugin module', e));
