@@ -1,0 +1,14 @@
+[
+    {
+        "name": "keyboardInput",
+        "autoActivate": true
+    },
+    {
+        "name": "touchInput",
+        "autoActivate": true
+    },
+    {
+        "name": "touchPointerInput",
+        "autoActivate": false
+    }
+]

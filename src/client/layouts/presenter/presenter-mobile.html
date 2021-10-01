@@ -4,43 +4,34 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-        <link rel="stylesheet" href="../../../../node_modules/bulma/css/bulma.min.css" />
-        <link rel="stylesheet" href="index.css" />
-        <script defer src="../../../../node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
-        <!-- type="module" not needed because we work with parcel bundler -->
-        <script src="../common/slide-view/slide-view.js"></script>
-        <script src="../common/url-form/url-form.js"></script>
-        <script src="./components/timer/timer.js"></script>
-        <script src="./components/notes/notes.js"></script>
-        <script type="module" src="../common/menu-dropdown/menu-dropdown.js"></script>
         <title>Presenter view</title>
     </head>
     <body>
-        <section class="columns is-marginless is-paddingless">
-            <tc-menu-dropdown></tc-menu-dropdown>
-            <div class="column" id="current-mobile">
-                <div class="content">
-                    <tc-slide focus></tc-slide>
-                </div>
-            </div>
-            <div class="column is-paddingless has-background-white">
-                <div class="has-background-white" id="next-mobile">
-                    <div class="content">
-                        <tc-slide delta="1"></tc-slide>
-                    </div>
-                </div>
-                <div class="has-background-white" id="timer">
-                    <div class="content">
-                        <tc-timer></tc-timer>
-                    </div>
-                </div>
-                <div class="has-background-white" id="notes">
-                    <div class="content">
-                        <tc-notes></tc-notes>
-                    </div>
-                </div>
-            </div>
+        <section id="header" style="height: 8vh">
+            <div class="pl-1"><tc-menu-navigation></tc-menu-navigation></div>
+            <div><tc-timer></tc-timer></div>
+            <div class="pr-1"><tc-menu-plugins></tc-menu-plugins></div>
         </section>
-        <script src="./index.js"></script>
+        <div id="placeholder1" class="mobile-half-screen-height">
+            <article class="message is-light mobile-half-screen-height mb-0">
+                <div class="message-header">
+                    <p>Notes</p>
+                </div>
+                <div class="message-body">
+                    <tc-notes></tc-notes>
+                </div>
+            </article>
+        </div>
+        <tc-loader>
+            <section slot="success" class="current-mobile mobile-half-screen-height px-0 py-0">
+                <tc-slide id="currentSlide" focus></tc-slide>
+                <div id="placeholder2"/>
+            </section>
+            <section slot="error">
+                <div class="container is-max-desktop">
+                    <tc-magic-info></tc-magic-info>
+                </div>
+            </section>
+        </tc-loader>
     </body>
 </html>

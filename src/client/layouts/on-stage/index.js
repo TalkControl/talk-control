@@ -1,17 +1,16 @@
 'use strict';
 
-import { TalkControlMaster } from '../../talk-control-master/talk-control-master.js';
-import config from '@config/config.json';
+import 'bulma/css/bulma.min.css';
+import 'lit-fontawesome/css/font.css';
+import './index.css';
+import '@client/web-components/slide-view/slide-view.js';
+import '@client/web-components/loader/loader.js';
+import '@client/web-components/magic-info-tutorial/magic-info-tutorial.js';
+import '@client/web-components/clock/clock.js';
+import '@client/web-components/menu-navigation/menu-navigation.js';
+import '@client/web-components/menu-plugins/menu-plugins.js';
+import { bootstrapTcController } from '@client/tc-controller/bootstrap';
 
 window.addEventListener('DOMContentLoaded', function() {
-    const isRemote = window.location.href.indexOf('://localhost:') === -1;
-
-    const talkControlMaster = new TalkControlMaster(isRemote ? config.tcServer.urls.external : config.tcServer.urls.local);
-    talkControlMaster.init();
-
-    const url = sessionStorage.getItem('presentationUrl');
-    if (url) {
-        const slideViews = document.querySelectorAll('tc-slide');
-        slideViews.forEach(slideView => (slideView.url = url));
-    }
+    bootstrapTcController();
 });
