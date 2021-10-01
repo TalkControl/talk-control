@@ -42,7 +42,7 @@ describe('TCServer', function() {
     it('should resolve controller channel', function() {
         assert.calledWithExactly(EventBusResolver.channel, Channels.CONTROLLER_SERVER, { server: httpServer });
         expect(EventBusResolver.channel.getCalls().length).to.be.equal(1);
-        expect(server.channel).to.be.equal(controllerChannel);
+        expect(server.controllerServerChannel).to.be.equal(controllerChannel);
     });
 
     it('should resolve engine on initialization', function() {

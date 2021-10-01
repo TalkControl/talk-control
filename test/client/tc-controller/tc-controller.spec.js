@@ -36,8 +36,8 @@ describe('TCController', function() {
         assert.calledWithExactly(EventBusResolver.channel, Channels.CONTROLLER_SERVER, { server: serverUrl });
         assert.calledWithExactly(EventBusResolver.channel, Channels.CONTROLLER_COMPONENT, { deep: true });
         expect(EventBusResolver.channel.getCalls().length).to.be.equal(2);
-        expect(controller.serverChannel).to.be.equal(serverChannel);
-        expect(controller.componentChannel).to.be.equal(componentChannel);
+        expect(controller.controllerServerChannel).to.be.equal(serverChannel);
+        expect(controller.controllerComponentChannel).to.be.equal(componentChannel);
     });
 
     it('should load presentation on initialization', function() {

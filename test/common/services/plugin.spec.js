@@ -16,11 +16,11 @@ describe('Plugin service', function() {
                 usedByAComponent: true
             };
             const params = {
-                componentChannel: {
+                controllerComponentChannel: {
                     on: spy(),
                     broadcast: spy()
                 },
-                serverChannel: {
+                controllerServerChannel: {
                     on: spy(),
                     broadcast: spy()
                 }
@@ -32,8 +32,8 @@ describe('Plugin service', function() {
 
             // Then
             assert.isOk(pluginLoader.loadPluginModule.calledWith(pluginName));
-            assert.isOk(params.componentChannel.on.calledWith(pluginInstance.type));
-            assert.isOk(params.componentChannel.broadcast.calledWith('activatePlugin'));
+            assert.isOk(params.controllerComponentChannel.on.calledWith(pluginInstance.type));
+            assert.isOk(params.controllerComponentChannel.broadcast.calledWith('activatePlugin'));
 
             // Finally
             pluginLoader.loadPluginModule.restore();
@@ -49,10 +49,10 @@ describe('Plugin service', function() {
                 onEvent: spy()
             };
             const params = {
-                componentChannel: {
+                controllerComponentChannel: {
                     broadcast: stub()
                 },
-                serverChannel: {
+                controllerServerChannel: {
                     broadcast: stub()
                 }
             };

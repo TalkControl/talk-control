@@ -7,8 +7,8 @@ describe('TCComponent', function() {
     let on, broadcast;
     beforeEach(function() {
         tcComponent = new TCComponent({ engineName: 'revealjs' });
-        on = stub(tcComponent.channel, 'on');
-        broadcast = stub(tcComponent.channel, 'broadcast');
+        on = stub(tcComponent.controllerComponentChannel, 'on');
+        broadcast = stub(tcComponent.controllerComponentChannel, 'broadcast');
     });
 
     describe('constructor()', function() {
