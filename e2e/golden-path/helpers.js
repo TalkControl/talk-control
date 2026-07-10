@@ -3,10 +3,17 @@
 // (controller :3000 + tc-server :3001 + showcase :3002), démarrée par le
 // `webServer` de playwright.config.cjs. Voir docs/improvements/step-01-e2e-golden-path.md.
 const { expect } = require('@playwright/test');
+const { randomUUID } = require('crypto');
 
 // URL de présentation par défaut = showcase local (deck de démo reveal.js).
 // C'est la valeur pré-remplie par le formulaire (config.tcShowcase.urls.local).
 const PRESENTATION_URL = 'http://127.0.0.1:3002';
+
+// Session de présentation partagée par toutes les vues d'un même test (IMP-002).
+// Le serveur socket rejette toute connexion sans ?s=<uuid> valide, et n'échange
+// qu'entre les sockets de la même session. Ouvrir deux vues avec le même id
+// reproduit le flux réel (liens du view-selector / QR code portent le token).
+const SESSION_ID = randomUUID();
 
 // Titres des premières slides du deck de démo reveal.js servi par le showcase.
 // Sert de repère comportemental pour vérifier la navigation.
@@ -20,15 +27,17 @@ const SLIDES = {
  * Ouvre une vue (`on-stage.html` / `presenter.html`) avec l'URL de présentation
  * pré-injectée dans le sessionStorage — équivalent d'un utilisateur ayant validé
  * le formulaire puis choisi la vue. La vue lit `sessionStorage.presentationUrl`
- * (cf. src/common/services/presentation.ts resolveUrl).
+ * (cf. src/common/services/presentation.ts resolveUrl) et rejoint la session
+ * portée par le query param `s` (cf. src/common/services/session.ts).
  * @param {import('@playwright/test').Page} page - page Playwright à piloter
  * @param {'on-stage.html'|'presenter.html'} view - vue à ouvrir
+ * @param {string} [sessionId] - session à rejoindre (défaut : SESSION_ID partagé)
  */
-async function openView(page, view) {
+async function openView(page, view, sessionId = SESSION_ID) {
     await page.addInitScript(url => {
         sessionStorage.setItem('presentationUrl', url);
     }, PRESENTATION_URL);
-    await page.goto('/' + view);
+    await page.goto('/' + view + '?s=' + sessionId);
     // Attendre que l'iframe de présentation soit montée (dans le shadow DOM du layout).
     await expect(revealFrameHeading(page, SLIDES.title)).toBeVisible({ timeout: 15000 });
     // Attendre la fin du handshake d'init : le loader (tc-loader) retire sa classe
@@ -78,4 +87,4 @@ async function navTo(page, key, expectedHeading) {
     }).toPass({ timeout: 15000 });
 }
 
-module.exports = { PRESENTATION_URL, SLIDES, openView, revealFrameHeading, currentFrame, navTo };
+module.exports = { PRESENTATION_URL, SESSION_ID, SLIDES, openView, revealFrameHeading, currentFrame, navTo };
