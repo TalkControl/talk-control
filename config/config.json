@@ -23,16 +23,11 @@
         },
         "port": 3002
     },
+    "presentation": {
+        "allowedHosts": ["localhost", "127.0.0.1"]
+    },
     "tcComponent": {
-        "keysBlocked": [
-            "ArrowDown",
-            "ArrowUp",
-            "ArrowLeft",
-            "ArrowRight",
-            "PageUp",
-            "PageDown",
-            "Space"
-        ]
+        "keysBlocked": ["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "PageUp", "PageDown", "Space"]
     },
     "logger": {
         "redux": false,

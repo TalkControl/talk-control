@@ -23,6 +23,18 @@ describe('Integration — /patcher', function () {
             expect(res.text).toContain('Invalid presentation URL');
         });
 
+        it('should return 400 when tc-presentation-url targets the cloud metadata address', async function () {
+            const res = await request(app).get('/patcher?tc-presentation-url=http://169.254.169.254/');
+            expect(res.status).toBe(400);
+            expect(res.text).toContain('Presentation URL not allowed');
+        });
+
+        it('should return 400 when tc-presentation-url uses a non-http scheme', async function () {
+            const res = await request(app).get('/patcher?tc-presentation-url=file:///etc/passwd');
+            expect(res.status).toBe(400);
+            expect(res.text).toContain('Presentation URL not allowed');
+        });
+
         it('should return presentation not found when fetch returns 404', async function () {
             vi.stubGlobal(
                 'fetch',
@@ -68,6 +80,10 @@ describe('Integration — /patcher', function () {
             expect(Array.isArray(cookies)).toBe(true);
             const tcCookie = ([cookies].flat() as string[]).find(c => c.includes('tc-presentation-url'));
             expect(tcCookie).toBeTruthy();
+            // Signed value (s: prefix, url-encoded) with hardening flags
+            expect(tcCookie).toContain('tc-presentation-url=s%3A');
+            expect(tcCookie).toContain('HttpOnly');
+            expect(tcCookie).toContain('SameSite=Lax');
         });
 
         it('should add base href proxy tag pointing to local server URL', async function () {

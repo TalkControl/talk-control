@@ -80,3 +80,34 @@ Test manuel : `curl -v "http://localhost:3001/patcher?tc-presentation-url=http:/
 - `http-proxy` suit sa propre résolution DNS : la fenêtre TOCTOU (DNS rebinding) existe toujours en théorie ;
   pour ce projet (outil de présentation, exposition temporaire), la validation à l'entrée est le bon
   compromis KISS. Le noter dans IMP-001.
+
+## Résultats de validation (2026-07-10)
+
+Implémenté sur `fix/step-03-ssrf` (commits `4f4328b` module + spec TDD, `e7f3720` durcissement
+patcher/proxy/router, docs ensuite). Non mergé — relecture sécurité demandée avant merge.
+
+| Vérification | Résultat |
+|---|---|
+| `npx tsc --noEmit` | ✅ 0 erreur |
+| `npm run lint` | ✅ 0 erreur (5 warnings JSDoc préexistants hors périmètre) |
+| `NODE_ENV=test npm test` | ✅ 328/328 (dont 34 nouveaux specs `presentation-url`) |
+| `npm run test:components` | ✅ 27/27 |
+| `npm run test:e2e` | ✅ 31/31, stable sur 2 runs (voir note workers ci-dessous) |
+| `npm run build` | ✅ |
+| Manuel `curl /patcher?tc-presentation-url=http://169.254.169.254/` | ✅ 400 `Presentation URL not allowed` |
+| Manuel `10.0.0.1`, `file:///etc/passwd` | ✅ 400 |
+| Manuel `/proxy` avec cookie forgé non signé vers metadata | ✅ 400 |
+
+Notes d'implémentation :
+
+- Grep confirmé : aucun code client ne lit le cookie en JS (le client ne manipule que le query param) →
+  `httpOnly` appliqué sans réserve.
+- TDD respecté : spec écrit et vu rouge avant l'implémentation du module.
+- Ajout non prévu : `fetch` du patcher encapsulé en try/catch → 502 `Presentation fetch failed`
+  (sans quoi le timeout ajouté aurait produit un 500 brut).
+- Compromis TOCTOU DNS rebinding tracé et assumé dans IMP-001 (decisions.md), avec l'évolution possible
+  (épinglage de l'IP résolue) si le profil d'exposition change.
+- **Découverte** : les e2e parallèles étaient structurellement interférents (état de slide global du
+  `tc-server` broadcasté à tous les clients ; le léger surcoût de validation a rendu la collision
+  systématique sur golden-path 2). Mitigé par `workers: 1` dans `playwright.config.cjs` (coût : ~3s) ;
+  la vraie correction est l'isolation par session de l'étape 04 (IMP-002).

@@ -9,6 +9,11 @@ module.exports = defineConfig({
     testDir: './e2e',
     timeout: 30000,
     retries: process.env.CI ? 2 : 0,
+    // Le tc-server garde UN état de slide global broadcasté à tous les clients
+    // (tc-server.ts) : des fichiers de test parallèles se re-synchronisent
+    // mutuellement et se marchent dessus. Sérialiser tant que le serveur
+    // n'isole pas ses présentations.
+    workers: 1,
     use: {
         headless: true,
         baseURL: 'http://localhost:3000'

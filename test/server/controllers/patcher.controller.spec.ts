@@ -4,6 +4,10 @@ import { patchPresentation } from '@server/controllers/patcher.controller';
 import { Request, Response } from 'express';
 
 vi.mock('@services/config', async orig => ({ ...(await orig()) }));
+vi.mock('node:dns/promises', () => {
+    const lookup = vi.fn().mockResolvedValue({ address: '93.184.216.34', family: 4 });
+    return { default: { lookup }, lookup };
+});
 
 describe('PatcherController', function () {
     let req: Partial<Request>, res: Partial<Response>;
@@ -46,10 +50,13 @@ describe('PatcherController', function () {
                     external: 'EXTERNAL_CONTROLLER',
                     local: 'LOCAL_CONTROLLER'
                 }
+            },
+            presentation: {
+                allowedHosts: []
             }
         } as any);
         isUsingRemoteUrl.mockReturnValue(true);
-        req = { query: { 'tc-presentation-url': presentationUrl } };
+        req = { query: { 'tc-presentation-url': presentationUrl }, headers: {} };
         res = { send: vi.fn(), cookie: vi.fn(), status: vi.fn().mockReturnThis() };
     });
 
@@ -58,7 +65,7 @@ describe('PatcherController', function () {
             // When
             await patchPresentation(req as Request, res as Response);
             // Then
-            expect(fetchMock).toHaveBeenCalledExactlyOnceWith(presentationUrl);
+            expect(fetchMock).toHaveBeenCalledExactlyOnceWith(presentationUrl, { signal: expect.any(AbortSignal) });
         });
 
         it('should error if requested presentation url is invalid', async function () {
@@ -69,6 +76,27 @@ describe('PatcherController', function () {
             // Then
             expect(res.status).toHaveBeenCalledWith(400);
             expect(res.send).toHaveBeenCalledWith('Invalid presentation URL');
+        });
+
+        it('should error if requested presentation url targets a private address', async function () {
+            // Given
+            req.query!['tc-presentation-url'] = 'http://169.254.169.254/latest/meta-data/';
+            // When
+            await patchPresentation(req as Request, res as Response);
+            // Then
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.send).toHaveBeenCalledWith('Presentation URL not allowed');
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it('should error with 502 when the presentation fetch fails', async function () {
+            // Given
+            fetchMock.mockRejectedValue(new Error('timeout'));
+            // When
+            await patchPresentation(req as Request, res as Response);
+            // Then
+            expect(res.status).toHaveBeenCalledWith(502);
+            expect(res.send).toHaveBeenCalledWith('Presentation fetch failed');
         });
 
         it('should error if presentation not found', async function () {
@@ -178,11 +206,25 @@ describe('PatcherController', function () {
             );
         });
 
-        it('should send presentation origin url as cookie', async function () {
+        it('should send presentation origin url as a signed httpOnly cookie', async function () {
             // When
             await patchPresentation(req as Request, res as Response);
             // then
-            expect(res.cookie).toHaveBeenCalledExactlyOnceWith('tc-presentation-url', presentationUrl);
+            expect(res.cookie).toHaveBeenCalledExactlyOnceWith('tc-presentation-url', presentationUrl, {
+                httpOnly: true,
+                sameSite: 'lax',
+                signed: true,
+                secure: false
+            });
+        });
+
+        it('should mark the cookie as secure when the request comes through HTTPS forwarding', async function () {
+            // Given
+            req.headers!['x-forwarded-proto'] = 'https';
+            // When
+            await patchPresentation(req as Request, res as Response);
+            // then
+            expect((res.cookie as ReturnType<typeof vi.fn>).mock.calls[0][2]).toHaveProperty('secure', true);
         });
     });
 });
