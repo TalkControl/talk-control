@@ -9,18 +9,32 @@ Réf. audit : [audit-2026-07.md](audit-2026-07.md).
 
 ## IMP-001 — Validation anti-SSRF des URLs de présentation
 
-**Étape :** 03 | **Statut :** ⬜ à décider/implémenter
+**Étape :** 03 | **Statut :** ✅ décidé et implémenté (2026-07-10, branche `fix/step-03-ssrf`)
 
 ### Contexte
 Cible du proxy/patcher pilotée par cookie/query non validé → proxy ouvert vers réseau interne/metadata.
 
-### Décision (à confirmer à l'implémentation)
-Module `validatePresentationUrl` partagé patcher+proxy : schémas http/https, refus IP privées/link-local,
-résolution DNS avant validation, allowlist de hosts en config (localhost autorisé pour le showcase dev).
-Fenêtre TOCTOU (DNS rebinding) assumée pour un outil de présentation à exposition temporaire.
+### Décision
+Module `src/server/services/presentation-url.ts` partagé patcher+proxy : schémas http/https uniquement,
+refus des IP privées/spéciales (loopback, RFC1918, link-local/metadata, `0.0.0.0`, équivalents IPv6 dont
+`::ffff:` mappées), résolution DNS (`dns.lookup`) **avant** validation de l'IP, allowlist
+`config.presentation.allowedHosts` (défaut `["localhost", "127.0.0.1"]` — golden-path showcase préservé ;
+vider la liste pour un déploiement exposé). Cookie `tc-presentation-url` signé (`TC_COOKIE_SECRET`, secret
+aléatoire au boot si absent) + `httpOnly`/`sameSite:lax`/`secure` derrière HTTPS. Le proxy revalide la cible
+à chaque requête (défense en profondeur) et ne désactive plus la vérification TLS (`secure:false` retiré).
+
+### Compromis accepté — fenêtre TOCTOU (DNS rebinding)
+`http-proxy` refait sa propre résolution DNS au moment du forward : un DNS qui répond public à la
+validation puis privé au forward passerait. **Assumé comme compromis KISS** pour un outil de présentation
+à exposition temporaire (ngrok le temps d'un talk) : l'attaque exige de contrôler un DNS à TTL court et une
+fenêtre de quelques ms, pour un serveur qui n'expose par ailleurs aucun secret local. Une épinglage de l'IP
+résolue (forward vers l'IP + header Host) est l'évolution documentée si le profil d'exposition change.
 
 ### Conséquences
-Nouveau module + tests, cookie signé, `secure:false` retiré. Golden-path 1 (showcase localhost) préservé.
+Nouveau module + 34 tests dédiés, contrôleurs/route/router durcis, helpers et specs adaptés (cookie signé).
+Effet de bord révélé : l'état de slide global du `tc-server` (broadcast à tous les clients) rendait les
+fichiers e2e parallèles interférents — e2e sérialisés (`workers: 1`) en attendant l'isolation par session
+(IMP-002, étape 04).
 
 ---
 
