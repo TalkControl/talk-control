@@ -59,7 +59,7 @@ Garde-fous quel que soit le modèle : exécuter réellement les 6 commandes de v
 | Étape | Statut | Contenu |
 |---|---|---|
 | [01 — E2E réels golden-path](step-01-e2e-golden-path.md) | ✅ | Playwright sur l'app réelle : 7/10 scénarios automatisés (1-5,7,10), 3 restés manuels |
-| [02 — Grand nettoyage](step-02-cleanup.md) | ⬜ | Fichiers morts, `colors`→natif, vestiges webpack/husky4, CONTRIBUTING |
+| [02 — Grand nettoyage](step-02-cleanup.md) | ✅ | Fichiers morts, `colors`→natif, vestiges webpack/husky4, CONTRIBUTING |
 
 ### Phase B — Sécurité (avant toute exposition ngrok)
 

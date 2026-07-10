@@ -66,3 +66,47 @@ Plus la validation systématique du protocole (README).
 - `styleText` exige Node ≥20.12 — le projet cible Node 24, OK. Ne pas introduire `chalk` (dépendance
   inutile quand le natif suffit — KISS).
 - Si un autre bundler/outil lisait le champ `browser` (vérifier vitest configs), le traiter avant suppression.
+
+## Résultats de validation (2026-07-10)
+
+**Statut : ✅ done.**
+
+```
+npx tsc --noEmit          → 0 erreur
+npm run lint              → 0 erreur (5 warnings jsdoc préexistants, hors scope)
+NODE_ENV=test npm test    → 285 passed (285)
+npm run test:components   → 27 passed (27)
+npm run test:e2e          → 31 passed (31) — 1 flaky isolé sur run initial (contention 4 workers),
+                             confirmé non lié en relançant seul puis la suite complète 2x
+npm run build             → OK, bundles identiques (même hash) avant/après suppression du champ browser
+npm install                → colors retiré du lockfile (1 package removed)
+npx tsx src/environment/get-started.ts → coloration console intacte (vérifié en TTY réel via `script`)
+grep -rn "colors" package.json src/    → aucune occurrence
+```
+
+### Divergences constatées vs le plan (signalées, adaptées)
+
+- **Vérification `grep -l "engine.io" dist/*.js`** : ne peut pas être vide — `socket.io-client` code en dur
+  le path HTTP par défaut `/engine.io` dans son propre bundle client (`Object.assign({path:"/engine.io",...`).
+  C'est une string de configuration cliente, pas le serveur `engine.io`. Vérification adaptée : comparaison
+  des bundles `dist/*.bundle.js` (hash Vite) avant/après suppression du champ `browser` — identiques, donc
+  aucun effet du champ sur la résolution Vite, et aucun code serveur embarqué.
+- **Nommage des styles `colors` → `styleText`** : `colors` utilise `bgBrightBlue`, `util.styleText` natif
+  utilise `bgBlueBright` (ordre couleur/intensité inversé). Non mentionné dans le plan, découvert à l'usage.
+- **`.gray`** utilisé dans `get-started.ts` (bloc ports) n'était pas listé explicitement dans le plan
+  (qui ne citait que `.green/.cyan/.bold`) — remplacé de la même façon par `styleText('gray', …)`.
+- **`.gitignore`** : en retirant `.nyc_output`, un dossier `.nyc_output/` orphelin (jamais tracké, daté
+  du 9 juin 2026, vestige d'un ancien run `nyc`) est devenu visible en `untracked`. Supprimé au passage,
+  dans l'esprit du nettoyage (même logique que `firebase-debug.log`).
+
+### Réalisé
+
+- Fichiers morts supprimés : `.huskyrc.js`, `jsconfig.json`, `scripts/validate-ci.sh`, `firebase-debug.log`
+  (ce dernier déjà ignoré par git, simple suppression locale).
+- `package.json` : `main`, `browser`, dépendance `colors` retirés ; lockfile régénéré.
+- `colors` remplacé par `util.styleText` natif dans `src/environment/get-started.ts` ; augmentation
+  `interface String` retirée de `src/vite-env.d.ts`.
+- `CONTRIBUTING.md` : références à `npm run commit`/`commit:select` remplacées par la convention réelle
+  (Gitmoji, hook `pretty-quick --staged`).
+- `docs-sources/.vitepress/config.js` : `editLink.pattern` corrigé `/edit/master/` → `/edit/develop/`.
+- `.gitignore` : entrées `.nyc_output` et `.cache` (Parcel) retirées, dossier orphelin associé supprimé.
