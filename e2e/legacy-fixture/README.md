@@ -41,6 +41,7 @@ npm run test:e2e:report
 - Playwright 1.61+, Chromium browser
 
 Browser binaries are installed via:
+
 ```bash
 npx playwright install chromium --with-deps
 ```
