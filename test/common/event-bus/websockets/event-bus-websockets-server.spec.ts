@@ -1,4 +1,7 @@
 import { EventBusWebsocketsServer } from '@event-bus/websockets/event-bus-websockets-server';
+import { Server } from 'socket.io';
+
+const VALID_UUID = '123e4567-e89b-42d3-a456-426614174000';
 
 describe('EventBusWebsocketsServer', function () {
     let eventBus = new EventBusWebsocketsServer(undefined as any);
@@ -10,6 +13,16 @@ describe('EventBusWebsocketsServer', function () {
     describe('constructor()', function () {
         it('should have instantiated EventBusWebsocketsServer', function () {
             expect(eventBus).toBeTruthy();
+        });
+
+        it('should register the session middleware on io', function () {
+            // Given
+            const useSpy = vi.spyOn(Server.prototype, 'use');
+            // When
+            const bus = new EventBusWebsocketsServer(undefined as any);
+            // Then
+            expect(useSpy).toHaveBeenCalledWith(bus.sessionMiddleware);
+            useSpy.mockRestore();
         });
 
         it('should add socket to sockets array on connection', function () {
@@ -65,6 +78,53 @@ describe('EventBusWebsocketsServer', function () {
             // Then
             expect(onMultipleSpy).toHaveBeenCalledWith('existingKey', null, mockSocket);
             onMultipleSpy.mockRestore();
+        });
+    });
+
+    describe('sessionMiddleware()', function () {
+        it('should reject a connection without sessionId', function () {
+            // Given
+            const socket = { handshake: { auth: {} }, data: {}, join: vi.fn() };
+            const next = vi.fn();
+            // When
+            eventBus.sessionMiddleware(socket as any, next);
+            // Then
+            expect(next).toHaveBeenCalledExactlyOnceWith(expect.any(Error));
+            expect((next.mock.calls[0][0] as Error).message).toBe('unauthorized');
+            expect(socket.join).not.toHaveBeenCalled();
+        });
+
+        it('should reject a connection without auth payload', function () {
+            // Given
+            const socket = { handshake: {}, data: {}, join: vi.fn() };
+            const next = vi.fn();
+            // When
+            eventBus.sessionMiddleware(socket as any, next);
+            // Then
+            expect(next).toHaveBeenCalledExactlyOnceWith(expect.any(Error));
+        });
+
+        it('should reject a connection with a malformed sessionId', function () {
+            // Given
+            const socket = { handshake: { auth: { sessionId: 'not-a-uuid' } }, data: {}, join: vi.fn() };
+            const next = vi.fn();
+            // When
+            eventBus.sessionMiddleware(socket as any, next);
+            // Then
+            expect(next).toHaveBeenCalledExactlyOnceWith(expect.any(Error));
+            expect(socket.join).not.toHaveBeenCalled();
+        });
+
+        it('should accept a valid sessionId, store it and join the session room', function () {
+            // Given
+            const socket = { handshake: { auth: { sessionId: VALID_UUID } }, data: {} as { sessionId?: string }, join: vi.fn() };
+            const next = vi.fn();
+            // When
+            eventBus.sessionMiddleware(socket as any, next);
+            // Then
+            expect(next).toHaveBeenCalledExactlyOnceWith();
+            expect(socket.data.sessionId).toBe(VALID_UUID);
+            expect(socket.join).toHaveBeenCalledExactlyOnceWith(`session:${VALID_UUID}`);
         });
     });
 
@@ -129,40 +189,57 @@ describe('EventBusWebsocketsServer', function () {
     });
 
     describe('broadcast()', function () {
-        it('should broadcast the data', function () {
+        it('should not touch sockets when broadcastToSockets=false', function () {
             // Given
             vi.spyOn(eventBus.io, 'emit').mockImplementation(() => false);
+            const toSpy = vi.spyOn(eventBus.io, 'to');
             const key = 'key';
             const message = 'message';
             // When
             eventBus.broadcast(key, message, false);
             // Then
             expect(eventBus.io.emit).not.toHaveBeenCalled();
+            expect(toSpy).not.toHaveBeenCalled();
             (eventBus.io.emit as ReturnType<typeof vi.fn>).mockRestore();
+            toSpy.mockRestore();
         });
 
-        it('should call io.emit when broadcast=true', function () {
+        it('should never emit globally to all sockets (no cross-session leak)', function () {
             // Given
             vi.spyOn(eventBus.io, 'emit').mockImplementation(() => false);
             const key = 'key';
             const message = 'message';
-            // When
-            eventBus.broadcast(key, message, true);
-            // Then
-            expect(eventBus.io.emit).toHaveBeenCalledExactlyOnceWith(key, message);
-            (eventBus.io.emit as ReturnType<typeof vi.fn>).mockRestore();
-        });
-
-        it('should call io.emit by default (no broadcast param)', function () {
-            // Given
-            vi.spyOn(eventBus.io, 'emit').mockImplementation(() => false);
-            const key = 'key';
-            const message = 'message';
-            // When
+            // When — pas de contexte de session : aucune émission socket
             eventBus.broadcast(key, message);
             // Then
-            expect(eventBus.io.emit).toHaveBeenCalledExactlyOnceWith(key, message);
+            expect(eventBus.io.emit).not.toHaveBeenCalled();
             (eventBus.io.emit as ReturnType<typeof vi.fn>).mockRestore();
+        });
+
+        it('should emit to the session room of the socket that triggered the exchange', function () {
+            // Given — un socket authentifié sur une session émet un message entrant
+            const roomEmit = vi.fn();
+            const toSpy = vi.spyOn(eventBus.io, 'to').mockReturnValue({ emit: roomEmit } as any);
+            const handlers: Record<string, (...data: unknown[]) => void> = {};
+            const mockSocket = {
+                id: 'socket-1',
+                data: { sessionId: VALID_UUID },
+                handshake: { headers: {} },
+                on: (key: string, cb: (...data: unknown[]) => void) => {
+                    handlers[key] = cb;
+                }
+            };
+            const connectionListeners = eventBus.io.listeners('connection');
+            const connectionCallback = connectionListeners[0] as unknown as (socket: typeof mockSocket) => void;
+            connectionCallback(mockSocket);
+            eventBus.on('inputEvent', () => {});
+            // When — réception du message puis broadcast sortant (même échange synchrone)
+            handlers['inputEvent']({ key: 'arrow' });
+            eventBus.broadcast('gotoSlide', { slide: 1 });
+            // Then — l'émission sort dans la room de la session, pas globalement
+            expect(toSpy).toHaveBeenCalledWith(`session:${VALID_UUID}`);
+            expect(roomEmit).toHaveBeenCalledWith('gotoSlide', { slide: 1 });
+            toSpy.mockRestore();
         });
     });
 

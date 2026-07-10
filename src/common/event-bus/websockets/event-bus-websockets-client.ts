@@ -2,15 +2,16 @@ import socketIO, { Socket } from 'socket.io-client';
 import { EventBus, EventCallback } from '../event-bus';
 import { eventBusLogger } from '@event-bus/event-bus-logger';
 
-type SocketIOWithConnect = typeof socketIO & { connect: (url?: string) => Socket };
+type SocketIOWithConnect = typeof socketIO & { connect: (url?: string, opts?: { auth: { sessionId?: string } }) => Socket };
 
 export class EventBusWebsocketsClient extends EventBus {
     io: Socket;
 
-    constructor(server?: string) {
+    constructor(server?: string, sessionId?: string) {
         super();
         // socket.io-client v4 exposes .connect as a callable alias; not reflected in TS types
-        this.io = (socketIO as SocketIOWithConnect).connect(server);
+        // Le sessionId part dans le handshake : le serveur rejette toute connexion sans session valide (IMP-002)
+        this.io = (socketIO as SocketIOWithConnect).connect(server, { auth: { sessionId } });
     }
 
     onMultiple(key: string, callback: EventCallback): void {

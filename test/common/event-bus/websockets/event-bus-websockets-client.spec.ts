@@ -20,6 +20,15 @@ describe('EventBusWebsocketsClient', function () {
         it('should have instantiated EventBusWebsocketsClient', function () {
             expect(eventBus).toBeTruthy();
         });
+
+        it('should pass the sessionId to the socket.io handshake auth', function () {
+            // Given
+            const sessionId = '123e4567-e89b-42d3-a456-426614174000';
+            // When
+            new EventBusWebsocketsClient('http://server:3001', sessionId);
+            // Then
+            expect((socketIO as any).connect).toHaveBeenCalledWith('http://server:3001', { auth: { sessionId } });
+        });
     });
 
     describe('on()', function () {
