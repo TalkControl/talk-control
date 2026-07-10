@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import contextService from '@services/context';
 import { config } from '@services/config';
+import { validatePresentationUrl } from '@server/services/presentation-url';
 
 const router = express.Router();
 
@@ -9,9 +10,9 @@ router.get('/', patchPresentation);
 export async function patchPresentation(req: Request, res: Response): Promise<void> {
     let presentationUrl;
     try {
-        presentationUrl = new URL(req.query['tc-presentation-url'] as string);
-    } catch {
-        res.status(400).send('Invalid presentation URL');
+        presentationUrl = await validatePresentationUrl(req.query['tc-presentation-url'] as string);
+    } catch (error) {
+        res.status(400).send((error as Error).message);
         return;
     }
 
@@ -19,7 +20,13 @@ export async function patchPresentation(req: Request, res: Response): Promise<vo
     const controllerUrl = isRemote ? config.tcController.urls.external : config.tcController.urls.local;
     const serverUrl = isRemote ? config.tcServer.urls.external : config.tcServer.urls.local;
 
-    const response = await fetch(presentationUrl.href);
+    let response;
+    try {
+        response = await fetch(presentationUrl.href, { signal: AbortSignal.timeout(10_000) });
+    } catch {
+        res.status(502).send('Presentation fetch failed');
+        return;
+    }
 
     if (response.status === 404) {
         res.status(404).send('Presentation not found');
@@ -31,7 +38,12 @@ export async function patchPresentation(req: Request, res: Response): Promise<vo
     content = setNoCaching(content);
     content = setFrontProxy(content, serverUrl);
     content = injectComponent(content, controllerUrl);
-    res.cookie('tc-presentation-url', presentationUrl.href);
+    res.cookie('tc-presentation-url', presentationUrl.href, {
+        httpOnly: true,
+        sameSite: 'lax',
+        signed: true,
+        secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
+    });
     res.send(content);
 }
 
