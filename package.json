@@ -2,7 +2,7 @@
     "name": "talkcontrol",
     "version": "0.5.0",
     "scripts": {
-        "clean": "rm -rf .cache dist",
+        "clean": "rm -rf dist",
         "create-tunnels": "npx tsx src/environment/create-tunnels.ts",
         "get-started": "npx tsx src/environment/get-started.ts",
         "start": "npx npm-run-all --parallel create-tunnels tc-server tc-showcase start-controller-after-server when-controller-is-started",

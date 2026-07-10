@@ -135,19 +135,19 @@ readable messages** that are easy to follow when looking through the **project h
 ### Commit Message Format
 
 Each commit message consists of a **header**, a **body** and a **footer**. The header has a special
-format that includes a **type**, a **scope** and a **subject**:
-
-_The command `npm run commit` was previously configured to use all these rules_
+format that includes a [Gitmoji](https://gitmoji.dev/), a **type**, a **scope** and a **subject**:
 
 ```
-<type>(<scope>): <subject>
+<emoji> <type>(<scope>): <subject>
 <BLANK LINE>
 <body>
 <BLANK LINE>
 <footer>
 ```
 
-The **header** is mandatory and the **scope** of the header is optional.
+The **header** is mandatory and the **scope** of the header is optional. There is no automated
+enforcement (no commitizen/commitlint) — the `pre-commit` hook only runs `pretty-quick --staged`
+to format staged files, so review your message against these conventions yourself.
 
 Any line of the commit message cannot be longer 100 characters! This allows the message to be easier
 to read on GitHub as well as in various git tools.
@@ -155,11 +155,11 @@ to read on GitHub as well as in various git tools.
 The footer should contain a [closing reference to an issue](https://help.github.com/articles/closing-issues-via-commit-messages/) if any.
 
 ```
-docs(changelog): update changelog to beta.5
+📝 docs(changelog): update changelog to beta.5
 ```
 
 ```
-fix(release): need to depend on latest xx dependency
+🐛 fix(release): need to depend on latest xx dependency
 ```
 
 ### Type
