@@ -1,9 +1,8 @@
 {
     "name": "talkcontrol",
     "version": "0.5.0",
-    "main": "index.js",
     "scripts": {
-        "clean": "rm -rf .cache dist",
+        "clean": "rm -rf dist",
         "create-tunnels": "npx tsx src/environment/create-tunnels.ts",
         "get-started": "npx tsx src/environment/get-started.ts",
         "start": "npx npm-run-all --parallel create-tunnels tc-server tc-showcase start-controller-after-server when-controller-is-started",
@@ -96,7 +95,6 @@
         "@fortawesome/free-solid-svg-icons": "^7.3.0",
         "@ngrok/ngrok": "^1.7.0",
         "bulma": "^0.9.0",
-        "colors": "^1.4.0",
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.6",
         "express": "^5.2.1",
@@ -118,9 +116,6 @@
         "defaults",
         "maintained node versions"
     ],
-    "browser": {
-        "socket.io": false
-    },
     "nodemonConfig": {
         "ignore": [
             "dist/*",

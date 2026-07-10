@@ -5,10 +5,6 @@ declare module 'query-selector-shadow-dom' {
     export function querySelectorDeep(selector: string, root?: Element | Document): Element | null;
 }
 
-interface String {
-    bgBrightBlue: string;
-}
-
 interface Window {
     Reveal: any;
 }
