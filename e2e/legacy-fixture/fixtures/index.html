@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
     <head>
         <meta charset="utf-8" />
@@ -51,9 +51,7 @@
                 <button id="btn-next" aria-label="Diapositive suivante">Suivant</button>
             </div>
 
-            <div class="slide-counter" id="slide-counter">
-                Diapositive <span id="current-slide">1</span> sur <span id="total-slides">5</span>
-            </div>
+            <div class="slide-counter" id="slide-counter">Diapositive <span id="current-slide">1</span> sur <span id="total-slides">5</span></div>
         </div>
 
         <script>
@@ -64,8 +62,7 @@
                 document.getElementById('current-slide').textContent = currentSlide;
                 document.getElementById('btn-prev').disabled = currentSlide <= 1;
                 document.getElementById('btn-next').disabled = currentSlide >= totalSlides;
-                document.querySelector('#slide-display p').textContent =
-                    'Diapositive ' + currentSlide + ' / ' + totalSlides;
+                document.querySelector('#slide-display p').textContent = 'Diapositive ' + currentSlide + ' / ' + totalSlides;
             }
 
             document.getElementById('btn-next').addEventListener('click', function () {

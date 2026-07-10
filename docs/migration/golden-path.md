@@ -1,7 +1,33 @@
 # Golden path — contrat comportemental
 
-> Document de référence pour la vérification manuelle à chaque étape de migration.
+> Document de référence pour la vérification à chaque étape de migration.
 > Toute régression visible dans ce scénario = étape à ne pas merger.
+
+## Automatisation e2e (étape 01 de docs/improvements/)
+
+Depuis l'étape 01 du plan d'amélioration, une partie des scénarios est couverte par
+des tests Playwright pilotant l'**application réelle** (`npm run test:e2e`, dossier
+`e2e/golden-path/`), et non plus une maquette statique.
+
+| Scénario | Statut e2e | Spec |
+|---|---|---|
+| 1 — Chargement initial | ✅ automatisé | `e2e/golden-path/10-loading.spec.js` |
+| 2 — Navigation horizontale | ✅ automatisé | `e2e/golden-path/11-navigation.spec.js` |
+| 3 — Navigation verticale | ✅ automatisé | `e2e/golden-path/11-navigation.spec.js` |
+| 4 — Fragment / espace | ✅ automatisé | `e2e/golden-path/11-navigation.spec.js` |
+| 5 — Timer | ✅ automatisé | `e2e/golden-path/13-presenter.spec.js` |
+| 6 — Notes | 🔶 manuel | (deck de démo : notes seulement sur slides profondes) |
+| 7 — Menu plugins | ✅ automatisé | `e2e/golden-path/14-plugins.spec.js` |
+| 8 — Touch pointer | 🔶 manuel | (drag dans l'iframe, à automatiser) |
+| 9 — Multi-vues | 🔶 manuel | (couvert partiellement par le multi-client) |
+| 10 — Multi-client | ✅ automatisé | `e2e/golden-path/12-multi-client.spec.js` |
+
+> Écarts constatés lors de l'automatisation (app réelle vs ce document) :
+> - L'iframe charge le showcase **en direct** (`http://127.0.0.1:3002?delta=0&focus`),
+>   pas via `/patcher?tc-presentation-url=` — le showcase auto-injecte le `tc-component`.
+>   Le patcher n'intervient que pour des présentations distantes sans le script.
+> - Le timer (scénario 5) démarre/redémarre au **clic** ; il n'a pas de vrai « pause »
+>   (chaque clic relance le chrono).
 
 ## Environnement de test
 
