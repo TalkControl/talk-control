@@ -40,18 +40,47 @@ fichiers e2e parallèles interférents — e2e sérialisés (`workers: 1`) en at
 
 ## IMP-002 — Pairing socket.io par session
 
-**Étape :** 04 | **Statut :** ⬜
+**Étape :** 04 | **Statut :** ✅ décidé et implémenté (2026-07-11, branche `feat/step-04-socket-auth`)
 
 ### Contexte
-Aucune auth socket, broadcast global, pilotage libre via URL ngrok.
+Aucune auth socket, broadcast global, pilotage libre via URL ngrok : quiconque a l'URL de base pilote la
+présentation ou réécrit le store via `init`.
 
-### Décision (à confirmer)
-`sessionId` opaque (UUID) au handshake + room `session:<id>`. Store serveur unique conservé (option a, KISS),
-multi-store par session noté comme évolution possible (option b). Pas de JWT/compte.
+### Décision
+Session de présentation identifiée par un `sessionId` opaque (`crypto.randomUUID()`), généré côté controller
+et véhiculé par l'URL (query param `?s=`) puis par le handshake socket.io (`auth: { sessionId }`).
+Module partagé `src/common/services/session.ts` ; l'URL de la page est la **source de vérité** du token
+(`getOrCreateSessionId` lit `?s=`, sinon génère et pose le param via `replaceState`) — toutes les vues
+ouvertes depuis le view-selector ou le QR code partagent donc le même id, sans état module ni storage.
+
+**KISS stateless : le secret EST l'id.** Le middleware `io.use` valide le seul format UUID et fait confiance
+au token opaque — pas de registre de sessions actives côté serveur, pas de JWT, pas de compte. Un tiers qui
+n'a que l'URL de base est rejeté (`unauthorized`) ; il lui faut le token complet, affiché uniquement dans le
+QR code / lien « remote ». Chaque socket rejoint la room `session:<id>` et le broadcast sort exclusivement
+dans la room de la session émettrice (`io.to`), jamais en global — un broadcast sans contexte de session est
+ignoré (et loggé) plutôt qu'émis à tous.
+
+### Option retenue : (a) store serveur unique + isolation par room
+Le `TCServer` garde **un seul store/engine partagé** : une instance TalkControl = **un présentateur à la
+fois** (cas d'usage réel). L'isolation par room protège du pilotage croisé, mais une 2e session qui fait son
+`init` réinitialise l'état de slide global — elle n'est pas « supportée », juste inoffensive pour l'autre room
+à l'écran. L'option (b) — `Map<sessionId, Store>` — reste l'évolution documentée si le besoin
+multi-présentateur simultané devient réel. Ne pas sur-anticiper.
+
+### Lien avec `workers: 1` (e2e)
+Conséquence directe de l'option (a) : le store serveur reste global et les fichiers e2e parallèles se
+réinitialiseraient mutuellement l'état de slide. Le pairing par room n'élimine PAS l'état global —
+**ne pas retirer `workers: 1`** de `playwright.config.cjs`. Seule l'option (b) (store par session)
+permettrait de re-paralléliser les e2e.
 
 ### Conséquences
-Middleware `io.use`, broadcast par room, propagation du token dans URLs + QR. Synchro intra-session préservée
-(golden-path 9/10).
+Middleware `io.use` + rooms (`event-bus-websockets-server.ts`), client `auth: { sessionId }`
+(`event-bus-websockets-client.ts`), token threadé dans les liens du view-selector et l'URL/QR du
+remote-control (les `onclick` inline redondants du view-selector, qui auraient navigué sans le token, sont
+supprimés). Réécriture d'URL du dev-server Vite corrigée pour préserver la query string (`?s=` renvoyait 404).
+Tests : service session + middleware + broadcast par room + intégration socket.io réelle (2 sessions
+isolées), e2e golden-path 9/10 sur session partagée + nouveau test « une 2e session n'est pas pilotée ».
+Comportement mono-présentateur iso-fonctionnel.
 
 ---
 
