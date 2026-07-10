@@ -18,7 +18,6 @@ pids
 # Coverage directory used by tools like istanbul
 coverage
 *.lcov
-.nyc_output
 .vitest-reports
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
@@ -52,9 +51,6 @@ Thumbs.db
 
 # Slide show example
 showcase/resources/tc-component/
-
-# Parcel
-.cache
 
 # Documentation
 docs-dist

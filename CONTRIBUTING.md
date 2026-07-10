@@ -17,7 +17,6 @@ dedication. By submitting a pull request or filing a bug, issue, or
 feature request, you are agreeing to comply with this waiver of copyright interest.
 Details can be found in our [LICENSE](LICENSE).
 
-
 ## <a name="issue"></a> Found a Bug?
 
 If you find a bug in the source code, you can help us by
@@ -61,40 +60,41 @@ Before you submit your Pull Request (PR) consider the following guidelines:
 1. Fork the sfeir-open-source/talk-control repo.
 1. Make your changes in a new git branch, based on our develop branch:
 
-   ```shell
-   git checkout -b my-fix-branch develop
-   ```
+    ```shell
+    git checkout -b my-fix-branch develop
+    ```
 
 1. Create your patch, **including appropriate test cases**.
 
 1. Commit your changes using a descriptive commit message that follows our
-   [commit message conventions](#commit). Adherence to these conventions
-   is necessary run the command `npm run commit` (this add all the files using `git add .`) or
-   if you need only add some files, you can need run the command `npm run commit:select`.
+   [commit message conventions](#commit). We use [Gitmoji](https://gitmoji.dev/) prefixes for
+   commit subjects. The `pre-commit` hook runs `pretty-quick --staged` to format your staged
+   files automatically — there is no enforced commit linting, so review your message against the
+   conventions below yourself.
 
 1. Push your branch to GitHub:
 
-   ```shell
-   git push origin my-fix-branch
-   ```
+    ```shell
+    git push origin my-fix-branch
+    ```
 
 1. In GitHub, send a pull request to `talk-control:develop`.
 
 - If we suggest changes then:
 
-  - Make the required updates.
-  - Rebase your branch and force push to your GitHub repository (this will update your Pull Request):
+    - Make the required updates.
+    - Rebase your branch and force push to your GitHub repository (this will update your Pull Request):
 
-    ```shell
-    git rebase develop -i
-    git push -f
-    ```
+        ```shell
+        git rebase develop -i
+        git push -f
+        ```
 
 > Generally speaking, all new code should have associated
-  unit tests that validate implemented features and the presence or lack of defects.
-  Additionally, the code should follow any stylistic and architectural guidelines
-  prescribed by the project. In the absence of such guidelines, mimic the styles
-  and patterns in the existing code-base.
+> unit tests that validate implemented features and the presence or lack of defects.
+> Additionally, the code should follow any stylistic and architectural guidelines
+> prescribed by the project. In the absence of such guidelines, mimic the styles
+> and patterns in the existing code-base.
 
 That's it! Thank you for your contribution!
 
@@ -105,27 +105,27 @@ from the main (upstream) repository:
 
 - Delete the remote branch on GitHub either through the GitHub web UI or your local shell as follows:
 
-  ```shell
-  git push origin --delete my-fix-branch
-  ```
+    ```shell
+    git push origin --delete my-fix-branch
+    ```
 
 - Check out the main branch:
 
-  ```shell
-  git checkout develop -f
-  ```
+    ```shell
+    git checkout develop -f
+    ```
 
 - Delete the local branch:
 
-  ```shell
-  git branch -D my-fix-branch
-  ```
+    ```shell
+    git branch -D my-fix-branch
+    ```
 
 - Update your fork with the latest upstream version:
 
-  ```shell
-  git pull --ff upstream develop
-  ```
+    ```shell
+    git pull --ff upstream develop
+    ```
 
 ## <a name="commit"></a> Commit Message Guidelines
 
@@ -176,7 +176,6 @@ Must be one of the following:
 - **refactor**: A code change that neither fixes a bug nor adds a feature
 - **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
 - **test**: Adding missing tests or correcting existing tests
-
 
 ### Subject
 
