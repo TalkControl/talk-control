@@ -1,6 +1,6 @@
 # Étape 15 — Combler les gaps de tests & remonter le filet
 
-**Branche** : `test/step-15-test-gaps` | **Taille** : L | **Prérequis** : 01, 11, 12
+**Branche** : `test/step-15-test-gaps` | **Taille** : L | **Prérequis** : 01, 11, 12 | **Modèle** : Sonnet 5 (écriture de tests)
 
 ## Contexte
 

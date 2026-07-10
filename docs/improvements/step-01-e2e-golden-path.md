@@ -1,6 +1,6 @@
 # Étape 01 — E2E réels sur le golden-path
 
-**Branche** : `test/step-01-e2e-golden-path` | **Taille** : M | **Prérequis** : aucun
+**Branche** : `test/step-01-e2e-golden-path` | **Taille** : M | **Prérequis** : aucun | **Modèle** : Fable 5 / Opus (découverte intensive de l'app)
 
 ## Contexte
 

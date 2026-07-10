@@ -1,6 +1,6 @@
 # Étape 07 — ESLint 10 + preset TypeScript
 
-**Branche** : `chore/step-07-eslint10` | **Taille** : S | **Prérequis** : 06
+**Branche** : `chore/step-07-eslint10` | **Taille** : S | **Prérequis** : 06 | **Modèle** : Sonnet 5 (mécanique)
 
 ## Contexte
 

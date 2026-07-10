@@ -1,6 +1,6 @@
 # Étape 09 — Bulma 0.9 → 1.0
 
-**Branche** : `chore/step-09-bulma1` | **Taille** : S | **Prérequis** : 08
+**Branche** : `chore/step-09-bulma1` | **Taille** : S | **Prérequis** : 08 | **Modèle** : Sonnet 5 (mécanique)
 
 ## Contexte
 

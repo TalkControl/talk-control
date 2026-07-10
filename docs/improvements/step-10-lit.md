@@ -1,6 +1,6 @@
 # Étape 10 — lit-element → lit + factorisation composants
 
-**Branche** : `feat/step-10-lit` | **Taille** : L | **Prérequis** : 01 (08 recommandé avant)
+**Branche** : `feat/step-10-lit` | **Taille** : L | **Prérequis** : 01 (08 recommandé avant) | **Modèle** : Sonnet 5 + relecture (gros refactor, angles morts filet)
 
 ## Contexte
 

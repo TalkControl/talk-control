@@ -1,6 +1,6 @@
 # Étape 03 — Anti-SSRF sur le patcher et le proxy
 
-**Branche** : `fix/step-03-ssrf` | **Taille** : M | **Prérequis** : 01
+**Branche** : `fix/step-03-ssrf` | **Taille** : M | **Prérequis** : 01 | **Modèle** : Fable 5 / Opus (sécurité — allowlist SSRF)
 
 ## Contexte
 

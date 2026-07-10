@@ -1,6 +1,6 @@
 # Étape 05 — Secrets hors git & CORS resserré
 
-**Branche** : `fix/step-05-secrets-cors` | **Taille** : S | **Prérequis** : 01 (04 recommandé avant)
+**Branche** : `fix/step-05-secrets-cors` | **Taille** : S | **Prérequis** : 01 (04 recommandé avant) | **Modèle** : Fable 5 / Opus (sécurité — secrets/CORS)
 
 ## Contexte
 

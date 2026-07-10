@@ -1,6 +1,6 @@
 # Étape 11 — Event-bus typé (fin de la sécurité de type en trompe-l'œil)
 
-**Branche** : `feat/step-11-typed-event-bus` | **Taille** : M | **Prérequis** : 10
+**Branche** : `feat/step-11-typed-event-bus` | **Taille** : M | **Prérequis** : 10 | **Modèle** : Sonnet 5 + relecture (typage transverse)
 
 ## Contexte
 

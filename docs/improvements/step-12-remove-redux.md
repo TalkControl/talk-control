@@ -1,6 +1,6 @@
 # Étape 12 — Redux → store minimal typé
 
-**Branche** : `feat/step-12-remove-redux` | **Taille** : M | **Prérequis** : 11
+**Branche** : `feat/step-12-remove-redux` | **Taille** : M | **Prérequis** : 11 | **Modèle** : Sonnet 5 + relecture (refactor du cœur d'état)
 
 ## Contexte
 

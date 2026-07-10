@@ -1,6 +1,6 @@
 # Étape 14 — Plugins auto-découverts
 
-**Branche** : `feat/step-14-plugin-discovery` | **Taille** : S | **Prérequis** : 11
+**Branche** : `feat/step-14-plugin-discovery` | **Taille** : S | **Prérequis** : 11 | **Modèle** : Sonnet 5 + relecture (plugins hors filet, piège client/serveur)
 
 ## Contexte
 

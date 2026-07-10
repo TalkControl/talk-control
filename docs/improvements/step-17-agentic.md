@@ -1,6 +1,6 @@
 # Étape 17 — Socle agentic versionné
 
-**Branche** : `chore/step-17-agentic` | **Taille** : M | **Prérequis** : 01 (idéalement en dernier)
+**Branche** : `chore/step-17-agentic` | **Taille** : M | **Prérequis** : 01 (idéalement en dernier) | **Modèle** : Fable 5 / Opus (design/meta)
 
 ## Contexte
 

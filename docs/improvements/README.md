@@ -31,6 +31,27 @@ Chaque étape suit ce cycle. Les fichiers `step-XX` ne le répètent pas — il 
 
 **Interdits** : renommer des variables existantes sans nécessité fonctionnelle ; élargir le scope d'une étape ; committer `config/config.json` avec un token ; baisser un seuil de coverage pour faire passer la CI.
 
+## Modèle recommandé par étape
+
+Chaque fiche `step-XX.md` porte un champ `**Modèle**` dans son en-tête. Trois tiers :
+
+- **Sonnet 5** — étape mécanique/déterministe. Le filet e2e (étape 01) suffit à attraper une régression : le modèle applique, lance la validation, commit.
+- **Sonnet 5 + relecture** — jugement d'implémentation requis, et/ou l'étape touche des zones **hors couverture e2e** (notes, touch-pointer, multi-vues, plugins). À relire avant merge.
+- **Fable 5 / Opus** — sécurité (03-05) ou décision structurante (13, 17). Un modèle plus petit peut produire du code plausible mais faux (allowlist SSRF contournable, pairing cassable, mauvaise tranche sur `handleTouch`).
+
+Garde-fous quel que soit le modèle : exécuter réellement les 6 commandes de validation ; une étape = une PR relue ; compléter les scénarios e2e 6/8/9 avant les étapes qui touchent ces surfaces.
+
+| Étape | Modèle |
+|---|---|
+| 01 e2e | Fable 5 / Opus (fait — découverte intensive) |
+| 02 cleanup | Sonnet 5 |
+| 03 SSRF, 04 socket, 05 secrets/CORS | Fable 5 / Opus (sécurité) |
+| 06 Vite 8, 07 ESLint 10, 09 Bulma 1 | Sonnet 5 |
+| 08 CSS, 10 lit, 11 event-bus, 12 Redux, 14 plugins, 16 CI | Sonnet 5 + relecture |
+| 13 moteur serveur | Fable 5 / Opus (décision handleTouch) |
+| 15 gaps tests | Sonnet 5 |
+| 17 agentic | Fable 5 / Opus (design/meta) |
+
 ## Les étapes
 
 ### Phase A — Filet de sécurité (prérequis à tout le reste)

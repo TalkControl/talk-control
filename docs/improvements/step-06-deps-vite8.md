@@ -1,6 +1,6 @@
 # Étape 06 — Upgrades groupées + Vite 5 → 8
 
-**Branche** : `chore/step-06-deps-vite8` | **Taille** : L | **Prérequis** : 02
+**Branche** : `chore/step-06-deps-vite8` | **Taille** : L | **Prérequis** : 02 | **Modèle** : Sonnet 5 (mécanique, gros mais déterministe)
 
 ## Contexte
 

@@ -1,6 +1,6 @@
 # Étape 16 — Refonte CI
 
-**Branche** : `chore/step-16-ci` | **Taille** : M | **Prérequis** : 01, 06, 07, 15
+**Branche** : `chore/step-16-ci` | **Taille** : M | **Prérequis** : 01, 06, 07, 15 | **Modèle** : Sonnet 5 + relecture (YAML CI, à observer en run réel)
 
 ## Contexte
 

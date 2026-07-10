@@ -1,6 +1,6 @@
 # Étape 02 — Grand nettoyage
 
-**Branche** : `chore/step-02-cleanup` | **Taille** : S | **Prérequis** : 01 (le filet)
+**Branche** : `chore/step-02-cleanup` | **Taille** : S | **Prérequis** : 01 (le filet) | **Modèle** : Sonnet 5 (mécanique)
 
 ## Contexte
 

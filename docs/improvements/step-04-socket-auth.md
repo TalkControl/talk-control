@@ -1,6 +1,6 @@
 # Étape 04 — Pairing et autorisation socket.io
 
-**Branche** : `feat/step-04-socket-auth` | **Taille** : M | **Prérequis** : 01
+**Branche** : `feat/step-04-socket-auth` | **Taille** : M | **Prérequis** : 01 | **Modèle** : Fable 5 / Opus (sécurité — pairing)
 
 ## Contexte
 

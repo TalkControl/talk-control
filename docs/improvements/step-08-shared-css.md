@@ -1,6 +1,6 @@
 # Étape 08 — CSS Bulma partagé (fin de la duplication ×13)
 
-**Branche** : `feat/step-08-shared-css` | **Taille** : M | **Prérequis** : 01
+**Branche** : `feat/step-08-shared-css` | **Taille** : M | **Prérequis** : 01 | **Modèle** : Sonnet 5 + relecture (CSS shadow DOM, hors filet)
 
 ## Contexte
 

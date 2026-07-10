@@ -1,6 +1,6 @@
 # Étape 13 — Nettoyage du moteur serveur & patterns datés
 
-**Branche** : `fix/step-13-server-engine` | **Taille** : S | **Prérequis** : 11
+**Branche** : `fix/step-13-server-engine` | **Taille** : S | **Prérequis** : 11 | **Modèle** : Fable 5 / Opus (décision handleTouch, clavier hors filet)
 
 ## Contexte
 
