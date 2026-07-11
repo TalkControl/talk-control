@@ -1,4 +1,4 @@
-import { SESSION_PARAM, isValidSessionId, sessionRoom, withSessionId, getOrCreateSessionId } from '@services/session';
+import { SESSION_PARAM, isValidSessionId, sessionRoom, withSessionId } from '@services/session';
 
 const VALID_UUID = '123e4567-e89b-42d3-a456-426614174000';
 
@@ -70,23 +70,48 @@ describe('session service', function () {
     });
 
     describe('getOrCreateSessionId()', function () {
-        it('should return the sessionId already present in the page url', function () {
+        // Le service mémoïse l'id pour la durée de vie de la page : chaque
+        // « chargement de page » (nouvel onglet, F5) = un module frais.
+        let getOrCreateSessionId: () => string;
+
+        const newPageLoad = async (path?: string) => {
+            if (path !== undefined) window.history.replaceState(null, '', path);
+            vi.resetModules();
+            ({ getOrCreateSessionId } = await import('@services/session'));
+        };
+
+        beforeEach(async function () {
+            await newPageLoad();
+        });
+
+        it('should return the sessionId carried by the page url (lien view-selector / QR)', function () {
             window.history.replaceState(null, '', `/?${SESSION_PARAM}=${VALID_UUID}`);
             expect(getOrCreateSessionId()).toBe(VALID_UUID);
         });
 
+        it('should strip the session param from the address bar after reading it', function () {
+            // Jamais de token à l'écran (beamer), dans l'historique ou l'autocomplétion
+            window.history.replaceState(null, '', `/?${SESSION_PARAM}=${VALID_UUID}&other=1`);
+            getOrCreateSessionId();
+            const url = new URL(window.location.href);
+            expect(url.searchParams.get(SESSION_PARAM)).toBeNull();
+            expect(url.searchParams.get('other')).toBe('1');
+        });
+
+        it('should keep returning the consumed sessionId for the whole page life (mémoïsation)', function () {
+            window.history.replaceState(null, '', `/?${SESSION_PARAM}=${VALID_UUID}`);
+            expect(getOrCreateSessionId()).toBe(VALID_UUID);
+            // L'URL est nettoyée, mais la page garde sa session
+            expect(getOrCreateSessionId()).toBe(VALID_UUID);
+        });
+
         it('should generate a valid sessionId when the url has none', function () {
-            const sessionId = getOrCreateSessionId();
-            expect(isValidSessionId(sessionId)).toBe(true);
+            expect(isValidSessionId(getOrCreateSessionId())).toBe(true);
         });
 
-        it('should persist the generated sessionId in the page url (source of truth)', function () {
-            const sessionId = getOrCreateSessionId();
-            expect(new URL(window.location.href).searchParams.get(SESSION_PARAM)).toBe(sessionId);
-        });
-
-        it('should return the same sessionId on successive calls', function () {
-            expect(getOrCreateSessionId()).toBe(getOrCreateSessionId());
+        it('should not expose the generated sessionId in the page url', function () {
+            getOrCreateSessionId();
+            expect(new URL(window.location.href).searchParams.get(SESSION_PARAM)).toBeNull();
         });
 
         it('should regenerate the sessionId when the url param is malformed', function () {
@@ -96,21 +121,44 @@ describe('session service', function () {
             expect(sessionId).not.toBe('not-a-uuid');
         });
 
-        it('should reuse the generated sessionId on a fresh page of the same browser (télécommande)', function () {
+        it('should reuse the generated sessionId on a fresh page of the same browser (télécommande)', async function () {
             // Onglet 1 : l'index génère un id
             const sessionId = getOrCreateSessionId();
             // Onglet 2 : nouvel index, sans ?s= dans l'URL
-            window.history.replaceState(null, '', '/');
+            await newPageLoad('/');
             expect(getOrCreateSessionId()).toBe(sessionId);
         });
 
-        it('should not persist a sessionId coming from the url (pas de fixation de session)', function () {
-            // Une page ouverte avec le token de quelqu'un d'autre le rejoint...
-            window.history.replaceState(null, '', `/?${SESSION_PARAM}=${VALID_UUID}`);
+        it('should adopt the url token when the browser has no session yet (mobile via QR, F5 compris)', async function () {
+            // Le mobile scanne le QR : premier contact, pas de session locale
+            await newPageLoad(`/?${SESSION_PARAM}=${VALID_UUID}`);
             expect(getOrCreateSessionId()).toBe(VALID_UUID);
-            // ... mais un index ouvert ensuite sans token ne doit PAS hériter de cet id
-            window.history.replaceState(null, '', '/');
-            expect(getOrCreateSessionId()).not.toBe(VALID_UUID);
+            // Un F5 plus tard (URL nettoyée) : il reste dans la session du QR
+            await newPageLoad('/');
+            expect(getOrCreateSessionId()).toBe(VALID_UUID);
+        });
+
+        it('should not let a url token overwrite the browser session (anti-fixation)', async function () {
+            // Le navigateur a déjà SA session...
+            const ownSessionId = getOrCreateSessionId();
+            // ... une page ouverte avec le token de quelqu'un d'autre le rejoint ponctuellement...
+            await newPageLoad(`/?${SESSION_PARAM}=${VALID_UUID}`);
+            expect(getOrCreateSessionId()).toBe(VALID_UUID);
+            // ... mais la session du navigateur n'est pas écrasée
+            await newPageLoad('/');
+            expect(getOrCreateSessionId()).toBe(ownSessionId);
+        });
+
+        it('should heal a stale url token after one reload (le F5 raccroche à la session du navigateur)', async function () {
+            // Session courante du navigateur
+            const ownSessionId = getOrCreateSessionId();
+            // Onglet restauré avec un token périmé dans son URL : il le consomme et nettoie l'URL
+            await newPageLoad(`/?${SESSION_PARAM}=${VALID_UUID}`);
+            getOrCreateSessionId();
+            expect(new URL(window.location.href).searchParams.get(SESSION_PARAM)).toBeNull();
+            // F5 : plus de token dans l'URL → retour dans la session du navigateur
+            await newPageLoad();
+            expect(getOrCreateSessionId()).toBe(ownSessionId);
         });
     });
 });

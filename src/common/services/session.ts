@@ -43,26 +43,40 @@ export const withSessionId = (url: string, sessionId: string): string => {
     return /^[a-z][a-z0-9+.-]*:/i.test(url) ? absolute.toString() : `${absolute.pathname.split('/').pop()}${absolute.search}${absolute.hash}`;
 };
 
+// Session de la page courante, résolue une seule fois par chargement.
+let currentSessionId: string | null = null;
+
 /**
- * Read the session id of the current page. Priorité : le query param `s` de
- * l'URL (posé par le view-selector / le QR code — jamais persisté, pour ne pas
- * permettre la fixation de session par lien piégé), sinon l'id précédemment
- * généré par ce navigateur (localStorage — c'est lui qui fait que deux onglets
- * ouverts sur l'index rejoignent la même session : la télécommande), sinon un
- * id neuf. L'id retenu est posé dans l'URL (replaceState) pour rester copiable.
+ * Read the session id of the current page. Priorité :
+ * 1. le query param `s` de l'URL (lien du view-selector / QR code) — consommé
+ *    puis RETIRÉ de la barre d'adresse : jamais de token à l'écran (beamer),
+ *    dans l'historique ou l'autocomplétion, et un F5 retombe sur la session du
+ *    navigateur au lieu de ressusciter un token périmé. Adopté durablement
+ *    seulement si le navigateur n'a pas encore de session (mobile via QR) —
+ *    jamais d'écrasement (anti-fixation par lien piégé) ;
+ * 2. sinon l'id précédemment généré par ce navigateur (localStorage — c'est lui
+ *    qui fait que tous les onglets rejoignent la même session : la télécommande) ;
+ * 3. sinon un id neuf, persisté.
  *
  * @returns {string} the session id of the current page
  */
 export const getOrCreateSessionId = (): string => {
+    if (currentSessionId) {
+        return currentSessionId;
+    }
     const url = new URL(window.location.href);
     const fromUrl = url.searchParams.get(SESSION_PARAM);
     if (isValidSessionId(fromUrl)) {
-        return fromUrl;
+        url.searchParams.delete(SESSION_PARAM);
+        window.history.replaceState(window.history.state, '', url);
+        if (!isValidSessionId(localStorage.getItem(SESSION_STORAGE_KEY))) {
+            localStorage.setItem(SESSION_STORAGE_KEY, fromUrl);
+        }
+        currentSessionId = fromUrl;
+        return currentSessionId;
     }
     const stored = localStorage.getItem(SESSION_STORAGE_KEY);
-    const sessionId = isValidSessionId(stored) ? stored : crypto.randomUUID();
-    localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
-    url.searchParams.set(SESSION_PARAM, sessionId);
-    window.history.replaceState(window.history.state, '', url);
-    return sessionId;
+    currentSessionId = isValidSessionId(stored) ? stored : crypto.randomUUID();
+    localStorage.setItem(SESSION_STORAGE_KEY, currentSessionId);
+    return currentSessionId;
 };
