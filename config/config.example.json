@@ -1,4 +1,5 @@
 {
+    "//": "Template for config/config.json (gitignored, copied automatically by npm install). Prefer the NGROK_AUTHTOKEN env variable over ngrok.authToken — never commit a token. The urls.external fields are written at runtime by create-tunnels.",
     "ngrok": {
         "authToken": ""
     },
