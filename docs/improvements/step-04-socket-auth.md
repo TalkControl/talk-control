@@ -98,9 +98,9 @@ Non mergé — relecture sécurité demandée avant merge.
 |---|---|
 | `npx tsc --noEmit` | ✅ 0 erreur |
 | `npm run lint` | ✅ 0 erreur (5 warnings JSDoc préexistants hors périmètre) |
-| `NODE_ENV=test npm test` | ✅ 354/354 (dont 20 nouveaux : service session, middleware, room broadcast, intégration socket.io réelle) |
+| `NODE_ENV=test npm test` | ✅ 356/356 (dont 22 nouveaux : service session, middleware, room broadcast, intégration socket.io réelle) |
 | `npm run test:components` | ✅ 27/27 |
-| `npm run test:e2e` | ✅ 32/32 — golden-path 9/10 (multi-vues/multi-clients même session) verts + nouveau test isolation |
+| `npm run test:e2e` | ✅ 33/33 — golden-path 9/10 verts + nouveau test isolation + nouveau test télécommande (flux réel) |
 | `npm run build` | ✅ |
 | TDD | ✅ specs écrits et vus rouges d'abord — le test d'isolation a démontré la fuite (`io.emit` global atteignait la session B) avant le fix |
 
@@ -125,3 +125,17 @@ Notes d'implémentation :
 - **`workers: 1` conservé** dans `playwright.config.cjs` : l'option (a) garde le store serveur global,
   le pairing par room n'élimine pas cet état partagé. Seule l'option (b) (store par session) permettrait
   de re-paralléliser — tracé dans IMP-002 (decisions.md).
+
+### Régression détectée et corrigée après la première validation (2026-07-11)
+
+**Symptôme (relevé par JF)** : la télécommande ne marchait plus — naviguer dans la vue presenter ne pilotait
+plus la vue on-stage. **Cause** : le flux réel pour ouvrir DEUX vues passe par deux chargements de l'index
+(deux onglets), et chaque index générait un sessionId neuf → deux rooms différentes. Les e2e ne l'avaient pas
+vu car ils injectaient le même `?s=` directement : le piège « un id différent par onglet » était couvert
+côté vues, pas côté index. **Fix** : `getOrCreateSessionId` réutilise l'id précédemment généré par le
+navigateur (`localStorage`, clé `tc-session-id`) quand l'URL n'en porte pas ; un id venu de l'URL n'est
+jamais persisté (anti-fixation). **Couverture ajoutée** : e2e `15-remote-control.spec.js` — parcours
+utilisateur complet par l'UI (index → Validate → clic carte de vue, deux onglets, aucun `?s=` injecté),
+vérifie le token commun dans les URLs puis la synchro presenter → on-stage ; vu rouge sans le fix
+(échec exact sur l'assertion « même token »), vert avec. Unitaires : réutilisation localStorage +
+non-persistance d'un token venu de l'URL.

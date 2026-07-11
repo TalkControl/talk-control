@@ -49,9 +49,17 @@ présentation ou réécrit le store via `init`.
 ### Décision
 Session de présentation identifiée par un `sessionId` opaque (`crypto.randomUUID()`), généré côté controller
 et véhiculé par l'URL (query param `?s=`) puis par le handshake socket.io (`auth: { sessionId }`).
-Module partagé `src/common/services/session.ts` ; l'URL de la page est la **source de vérité** du token
-(`getOrCreateSessionId` lit `?s=`, sinon génère et pose le param via `replaceState`) — toutes les vues
-ouvertes depuis le view-selector ou le QR code partagent donc le même id, sans état module ni storage.
+Module partagé `src/common/services/session.ts` ; résolution du token par `getOrCreateSessionId` :
+1. le query param `?s=` de l'URL (posé par le view-selector / QR code) — **jamais persisté**, pour interdire
+   la fixation de session par lien piégé ;
+2. sinon l'id précédemment généré par **ce navigateur** (`localStorage`) — c'est lui qui fait que deux
+   onglets ouverts séparément sur l'index rejoignent la même session (la télécommande presenter → on-stage,
+   flux de base du logiciel) ;
+3. sinon un id neuf, persisté et posé dans l'URL via `replaceState`.
+
+Conséquence assumée du point 2 : le token d'un navigateur est stable d'un lancement à l'autre (un QR
+photographié lors d'un talk précédent reste valide). Acceptable pour le profil d'exposition (ngrok le temps
+d'un talk) ; une rotation explicite (« nouvelle session ») est l'évolution documentée si besoin.
 
 **KISS stateless : le secret EST l'id.** Le middleware `io.use` valide le seul format UUID et fait confiance
 au token opaque — pas de registre de sessions actives côté serveur, pas de JWT, pas de compte. Un tiers qui
@@ -79,7 +87,9 @@ Middleware `io.use` + rooms (`event-bus-websockets-server.ts`), client `auth: { 
 remote-control (les `onclick` inline redondants du view-selector, qui auraient navigué sans le token, sont
 supprimés). Réécriture d'URL du dev-server Vite corrigée pour préserver la query string (`?s=` renvoyait 404).
 Tests : service session + middleware + broadcast par room + intégration socket.io réelle (2 sessions
-isolées), e2e golden-path 9/10 sur session partagée + nouveau test « une 2e session n'est pas pilotée ».
+isolées), e2e golden-path 9/10 sur session partagée + nouveau test « une 2e session n'est pas pilotée »
++ nouveau e2e télécommande (flux réel par l'UI, deux onglets, AUCUN `?s=` injecté — couvre la régression
+« deux index = deux sessions » détectée par JF après la première validation).
 Comportement mono-présentateur iso-fonctionnel.
 
 ---
