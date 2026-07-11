@@ -102,17 +102,40 @@ Comportement mono-présentateur iso-fonctionnel.
 
 ## IMP-003 — Secrets hors git
 
-**Étape :** 05 | **Statut :** ⬜
+**Étape :** 05 | **Statut :** ✅ Implémenté (branche `fix/step-05-secrets-cors`, 2026-07-11)
 
 ### Contexte
 Token ngrok dans `config/config.json` versionné et réécrit au runtime.
 
-### Décision (à confirmer)
-`config.example.json` versionné, `config.json` gitignored, token via `NGROK_AUTHTOKEN`, URLs runtime dans un
-fichier gitignored ou en mémoire. CORS `*` → allowlist.
+### Décision
+- **Séparation statique/sensible** : `config/config.example.json` versionné (structure complète, token vide),
+  `config/config.json` gitignored (`git rm --cached` + `.gitignore`), recréé depuis l'example par un
+  `postinstall` (`scripts/ensure-config.mjs`) — indispensable : la CI (7 jobs sur clone frais) et `tsc`
+  importent `config.json`.
+- **Token** : `NGROK_AUTHTOKEN` prioritaire sur `config.ngrok.authToken`
+  (`resolveNgrokAuthToken`, `tunnel.ts`), documenté README + `get-started`.
+- **Véhicule des URLs runtime : le même `config.json`, désormais untracké.** Le fichier d'étape proposait
+  `tunnels.runtime.json` ou de la mémoire ; vérification des lecteurs faite AVANT : le transport par fichier
+  est porteur pour trois canaux — le bundle client (Vite sert `config.json` comme module, relu à chaque
+  requête ; seul canal vers le QR de `remote-control.ts`, `url-form.ts`, `bootstrap.ts`), le tc-server
+  (nodemon watch les `.json` → restart → réimport avec URLs externes) et `get-started.ts`. Un fichier séparé
+  dupliquerait la lecture côté client sans gain : une fois `config.json` untracké, l'écriture runtime ne
+  touche plus jamais un fichier suivi (l'exigence réelle). KISS.
+- **CORS `*` → allowlist partagée** : `buildCorsOptions(config)` (`src/common/services/cors.ts`, testée) —
+  origines locales des 3 services + jumeaux loopback (`localhost` ↔ `127.0.0.1`) + URLs ngrok non vides.
+  Appliquée aux 3 surfaces : Express (`router.ts`), socket.io (`event-bus-websockets-server.ts`, cohérent
+  avec l'auth de session IMP-002), et dev server Vite (`server.cors.origin` dynamique qui relit
+  `config.json` à chaque requête — les URLs ngrok sont écrites APRÈS le démarrage de Vite ; le header
+  statique `ACAO: *` est supprimé, `Cross-Origin-Resource-Policy: cross-origin` conservé pour l'embarquement
+  cross-origin du composant). **Plus aucun `*` restant** — aucun test n'a montré de dépendance du
+  patcher/proxy à `*` : l'iframe patchée (origine `:3001`) charge `tc-component.bundle.js` depuis `:3000`
+  avec une origine couverte par l'allowlist.
 
 ### Conséquences
-`git rm --cached config/config.json`, adaptation tunnel/config-file, README mis à jour.
+Nouveaux tests : `cors.spec.ts` (11 cas), `tunnel.spec.ts` (6 cas, env prioritaire), intégration Express
+(origine hors allowlist → pas d'ACAO) et socket.io (handshake polling refusé/reflété). Canaris verts sans
+modification : golden-path 1 + les 3 e2e télécommande (35/35 e2e). Le churn `git checkout config/config.json`
+avant commit disparaît. Migration d'un token local existant : aucun (le `config.json` local avait un token vide).
 
 ---
 

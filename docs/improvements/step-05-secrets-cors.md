@@ -57,3 +57,27 @@ NGROK_AUTHTOKEN=xxx npm start               # tunnels OK, aucune écriture dans 
   après le changement, c'est le scénario le plus exposé au CORS.
 - Si `config/config.json` contenait déjà un token en local (non commité), rappeler au dev de le migrer vers
   `NGROK_AUTHTOKEN`.
+
+## Résultats de validation (2026-07-11, branche `fix/step-05-secrets-cors`)
+
+- **Écart vs fichier d'étape, tracé dans IMP-003** : la vérification préalable des lecteurs a invalidé
+  `tunnels.runtime.json`/mémoire — le client bundle `config.json` via Vite (QR `remote-control.ts`,
+  `url-form.ts`, `bootstrap.ts`) et le tc-server se recharge par le watch nodemon du fichier. Véhicule
+  retenu : le même `config.json`, **untracké** — l'écriture runtime ne touche plus aucun fichier suivi.
+  Corollaire indispensable : `postinstall` (`scripts/ensure-config.mjs`) recrée `config.json` depuis
+  l'example pour la CI et les clones frais (sinon `tsc`/imports cassent).
+- `npx tsc --noEmit` ✅ — `npm run lint` ✅ (0 erreur, 5 warnings JSDoc préexistants)
+- `NODE_ENV=test npm test` ✅ 380/380 (36 fichiers) — dont 11 cas `cors.spec.ts` (allowlist : locales,
+  jumeaux loopback, externals ngrok, normalisation, dédup, URL invalide), 6 cas `tunnel.spec.ts`
+  (`NGROK_AUTHTOKEN` prioritaire), intégration Express (origine hors allowlist → pas d'ACAO) et
+  socket.io (handshake polling : origine autorisée reflétée, inconnue refusée) — tous vus rouges avant impl (TDD)
+- `npm run test:components` ✅ 27/27 — `npm run build` ✅
+- `npm run test:e2e` ✅ **35/35 sans modifier aucun test** — canaris golden-path 1 et
+  `15-remote-control` (3 tests) verts avec l'allowlist
+- **Smoke manuel `npm start`** (Playwright MCP, flux nominal index → validate → 2 vues) : handshakes
+  socket.io 200 depuis `:3000`, navigation presenter → on-stage synchronisée, session partagée entre
+  onglets (contrat IMP-002 intact). QR masqué sans tunnel (comportement attendu sans token).
+- **`NGROK_AUTHTOKEN=xxx npm run create-tunnels`** (token bidon) : l'erreur ngrok cite le token de
+  l'env → priorité env prouvée ; `git status` sans aucun churn de fichier tracké pendant l'exécution.
+  Test avec un vrai token à faire par JF (aucun token local à migrer : `authToken` était vide).
+- `git status` ✅ : `config/config.json` untracké (gitignored), `config/config.example.json` tracké.
