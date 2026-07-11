@@ -49,17 +49,23 @@ présentation ou réécrit le store via `init`.
 ### Décision
 Session de présentation identifiée par un `sessionId` opaque (`crypto.randomUUID()`), généré côté controller
 et véhiculé par l'URL (query param `?s=`) puis par le handshake socket.io (`auth: { sessionId }`).
-Module partagé `src/common/services/session.ts` ; résolution du token par `getOrCreateSessionId` :
-1. le query param `?s=` de l'URL (posé par le view-selector / QR code) — **jamais persisté**, pour interdire
-   la fixation de session par lien piégé ;
-2. sinon l'id précédemment généré par **ce navigateur** (`localStorage`) — c'est lui qui fait que deux
-   onglets ouverts séparément sur l'index rejoignent la même session (la télécommande presenter → on-stage,
-   flux de base du logiciel) ;
-3. sinon un id neuf, persisté et posé dans l'URL via `replaceState`.
+Module partagé `src/common/services/session.ts` ; résolution du token par `getOrCreateSessionId`
+(mémoïsée par chargement de page) :
+1. le query param `?s=` de l'URL (lien du view-selector / QR code) — **consommé puis retiré de la barre
+   d'adresse** (`replaceState`) : le token n'apparaît jamais à l'écran (beamer !), dans l'historique ou
+   l'autocomplétion, et un F5 raccroche l'onglet à la session du navigateur au lieu de ressusciter un token
+   périmé. Adopté durablement **seulement si le navigateur n'a pas encore de session** (mobile qui scanne le
+   QR, F5 compris) — jamais d'écrasement d'une session existante (anti-fixation par lien piégé) ;
+2. sinon l'id précédemment généré par **ce navigateur** (`localStorage`, clé `tc-session-id`) — c'est lui
+   qui fait que tous les onglets (index, vues, F5, onglets restaurés) rejoignent la même session : la
+   télécommande presenter → on-stage, flux de base du logiciel ;
+3. sinon un id neuf, persisté.
 
-Conséquence assumée du point 2 : le token d'un navigateur est stable d'un lancement à l'autre (un QR
-photographié lors d'un talk précédent reste valide). Acceptable pour le profil d'exposition (ngrok le temps
-d'un talk) ; une rotation explicite (« nouvelle session ») est l'évolution documentée si besoin.
+Le token ne circule donc que dans les liens explicites (cartes du view-selector, URL/QR du remote-control),
+jamais dans les barres d'adresse. Conséquences assumées : le token d'un navigateur est stable d'un lancement
+à l'autre (rotation explicite « nouvelle session » = évolution documentée si besoin) ; un invité dont le
+navigateur a déjà sa propre session (co-speaker) rejoint la session du lien pour la durée de la page — après
+un F5 il doit recliquer le lien / rescanner le QR (prix de l'anti-fixation, assumé).
 
 **KISS stateless : le secret EST l'id.** Le middleware `io.use` valide le seul format UUID et fait confiance
 au token opaque — pas de registre de sessions actives côté serveur, pas de JWT, pas de compte. Un tiers qui

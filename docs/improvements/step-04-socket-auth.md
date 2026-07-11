@@ -98,9 +98,9 @@ Non mergé — relecture sécurité demandée avant merge.
 |---|---|
 | `npx tsc --noEmit` | ✅ 0 erreur |
 | `npm run lint` | ✅ 0 erreur (5 warnings JSDoc préexistants hors périmètre) |
-| `NODE_ENV=test npm test` | ✅ 356/356 (dont 22 nouveaux : service session, middleware, room broadcast, intégration socket.io réelle) |
+| `NODE_ENV=test npm test` | ✅ 359/359 (dont 25 nouveaux : service session, middleware, room broadcast, intégration socket.io réelle) |
 | `npm run test:components` | ✅ 27/27 |
-| `npm run test:e2e` | ✅ 33/33 — golden-path 9/10 verts + nouveau test isolation + nouveau test télécommande (flux réel) |
+| `npm run test:e2e` | ✅ 35/35 — golden-path 9/10 verts + isolation 2e session + 3 tests télécommande (flux réel, F5, onglet restauré) |
 | `npm run build` | ✅ |
 | TDD | ✅ specs écrits et vus rouges d'abord — le test d'isolation a démontré la fuite (`io.emit` global atteignait la session B) avant le fix |
 
@@ -139,3 +139,20 @@ utilisateur complet par l'UI (index → Validate → clic carte de vue, deux ong
 vérifie le token commun dans les URLs puis la synchro presenter → on-stage ; vu rouge sans le fix
 (échec exact sur l'assertion « même token »), vert avec. Unitaires : réutilisation localStorage +
 non-persistance d'un token venu de l'URL.
+
+### Deuxième récidive et durcissement final (2026-07-11)
+
+**Symptôme (JF, après le premier fix)** : « ça ne marche toujours pas ». **Diagnostic mesuré** (3 parcours
+sondés) : nominal via index ✅, URLs directes sans `?s=` ✅, onglet gardant un **vieux** `?s=` dans sa barre
+d'adresse ❌. Le navigateur de JF resservait des URLs de l'ère pré-fix (F5 conserve le query param, l'historique
+et l'autocomplétion les resservent) — et le design « l'URL gagne toujours » rendait ces tokens périmés
+**immortels**. **Durcissement** : le token de l'URL est consommé puis **retiré de la barre d'adresse**
+(`replaceState`), résolution mémoïsée par chargement de page ; adoption durable du token uniquement si le
+navigateur n'a pas encore de session (mobile via QR — le F5 mobile survit), jamais d'écrasement
+(anti-fixation). Effets : un F5 raccroche toujours l'onglet à la session du navigateur (auto-guérison des
+onglets pollués), l'historique n'apprend plus de token, et le token n'est plus visible à l'écran/beamer.
+**Couverture** : unitaires (strip, mémoïsation, adoption-si-vide, anti-fixation, guérison au F5 — 4 vus
+rouges avant l'implémentation) + 2 e2e (« la télécommande survit au F5 des deux vues », « un onglet restauré
+avec un vieux token se répare au rechargement »). Transition : les onglets encore ouverts sur un vieux
+`?s=` guérissent après UN rechargement (le premier F5 nettoie l'URL, le suivant raccroche) ; repasser par
+l'index les raccroche immédiatement.
