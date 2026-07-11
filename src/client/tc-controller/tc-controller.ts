@@ -8,8 +8,8 @@ export class TCController {
     controllerServerChannel: EventBus;
     controllerComponentChannel: EventBus;
 
-    constructor(server: string) {
-        this.controllerServerChannel = EventBusResolver.channel(Channels.CONTROLLER_SERVER, { server });
+    constructor(server: string, sessionId?: string) {
+        this.controllerServerChannel = EventBusResolver.channel(Channels.CONTROLLER_SERVER, { server, sessionId });
         this.controllerComponentChannel = EventBusResolver.channel(Channels.CONTROLLER_COMPONENT, { deep: true });
     }
 

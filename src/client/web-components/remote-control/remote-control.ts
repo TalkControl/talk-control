@@ -1,6 +1,7 @@
 import { bulmaStyles } from '@compat/lit-styles-compat';
 import { LitElement, html } from 'lit-element';
 import { config } from '@services/config';
+import { getOrCreateSessionId, withSessionId } from '@services/session';
 import QRCode from 'qrcode';
 
 class RemoteControlComponent extends LitElement {
@@ -14,9 +15,12 @@ class RemoteControlComponent extends LitElement {
 
     firstUpdated(): void {
         if (config.tcController.urls.external) {
-            QRCode.toCanvas(this.shadowRoot!.getElementById('qrCode') as HTMLCanvasElement, config.tcController.urls.external);
+            // L'URL du QR code doit porter le token de session : sans lui, le
+            // mobile serait rejeté par le serveur socket (IMP-002).
+            const remoteUrl = withSessionId(config.tcController.urls.external, getOrCreateSessionId());
+            QRCode.toCanvas(this.shadowRoot!.getElementById('qrCode') as HTMLCanvasElement, remoteUrl);
             this.shadowRoot!.getElementById('textCode')!.innerHTML =
-                `<a href="${config.tcController.urls.external}" title="Use this url to connect to TalkControl from another device">${config.tcController.urls.external}</a>`;
+                `<a href="${remoteUrl}" title="Use this url to connect to TalkControl from another device">${remoteUrl}</a>`;
         } else {
             this.shadowRoot!.getElementById('qrCodeSection')!.classList.add('is-hidden');
         }

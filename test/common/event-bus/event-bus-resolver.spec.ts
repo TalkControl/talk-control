@@ -59,10 +59,11 @@ describe('EventBusResolver', function () {
             isClientSide.mockReturnValue(true as any);
 
             const server = 'http://test.server.com';
+            const sessionId = '123e4567-e89b-42d3-a456-426614174000';
             // When
-            const result = EventBusResolver.channel(Channels.CONTROLLER_SERVER, { server });
+            const result = EventBusResolver.channel(Channels.CONTROLLER_SERVER, { server, sessionId });
             // Then
-            expect(EventBusWebsocketsClient).toHaveBeenCalledWith(server);
+            expect(EventBusWebsocketsClient).toHaveBeenCalledWith(server, sessionId);
             expect(result).toBeInstanceOf(EventBusProxy);
             expect((result as unknown as EventBusProxy).eventBus).toBe(eventBus);
             vi.mocked(EventBusWebsocketsClient).mockReset();

@@ -72,8 +72,14 @@ function devUrlRewrite(): Plugin {
         apply: 'serve',
         configureServer(server) {
             server.middlewares.use((req, _res, next) => {
-                if (req.url && DEV_URL_MAP[req.url]) {
-                    req.url = DEV_URL_MAP[req.url];
+                // Match sur le pathname seul : les pages portent désormais des query
+                // params (?s=<sessionId>, IMP-002) qui doivent survivre à la réécriture.
+                if (req.url) {
+                    const [path, query] = req.url.split('?');
+                    const target = DEV_URL_MAP[path];
+                    if (target) {
+                        req.url = query ? `${target}?${query}` : target;
+                    }
                 }
                 next();
             });

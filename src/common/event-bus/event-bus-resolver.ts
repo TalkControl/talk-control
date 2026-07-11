@@ -16,6 +16,7 @@ export type Channel = (typeof Channels)[keyof typeof Channels];
 interface ChannelOptions {
     server?: HttpServer | string;
     deep?: boolean;
+    sessionId?: string;
 }
 
 export class EventBusResolver {
@@ -30,7 +31,7 @@ export class EventBusResolver {
         } else {
             switch (name) {
                 case Channels.CONTROLLER_SERVER:
-                    return new EventBusProxy(Channels.CONTROLLER_SERVER, new EventBusWebsocketsClient(options.server as unknown as string));
+                    return new EventBusProxy(Channels.CONTROLLER_SERVER, new EventBusWebsocketsClient(options.server as unknown as string, options.sessionId));
                 case Channels.CONTROLLER_COMPONENT:
                     return new EventBusProxy(Channels.CONTROLLER_COMPONENT, new EventBusPostMessage(options.deep));
                 default:
