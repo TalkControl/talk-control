@@ -10,6 +10,8 @@
 
 export const SESSION_PARAM = 's';
 
+const SESSION_STORAGE_KEY = 'tc-session-id';
+
 const UUID_FORMAT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -42,19 +44,24 @@ export const withSessionId = (url: string, sessionId: string): string => {
 };
 
 /**
- * Read the session id from the current page url, or create one and persist it
- * in the url (replaceState). L'URL est la source de vérité : toutes les vues
- * ouvertes avec le même param `s` partagent la même session.
+ * Read the session id of the current page. Priorité : le query param `s` de
+ * l'URL (posé par le view-selector / le QR code — jamais persisté, pour ne pas
+ * permettre la fixation de session par lien piégé), sinon l'id précédemment
+ * généré par ce navigateur (localStorage — c'est lui qui fait que deux onglets
+ * ouverts sur l'index rejoignent la même session : la télécommande), sinon un
+ * id neuf. L'id retenu est posé dans l'URL (replaceState) pour rester copiable.
  *
  * @returns {string} the session id of the current page
  */
 export const getOrCreateSessionId = (): string => {
     const url = new URL(window.location.href);
-    const existing = url.searchParams.get(SESSION_PARAM);
-    if (isValidSessionId(existing)) {
-        return existing;
+    const fromUrl = url.searchParams.get(SESSION_PARAM);
+    if (isValidSessionId(fromUrl)) {
+        return fromUrl;
     }
-    const sessionId = crypto.randomUUID();
+    const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+    const sessionId = isValidSessionId(stored) ? stored : crypto.randomUUID();
+    localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
     url.searchParams.set(SESSION_PARAM, sessionId);
     window.history.replaceState(window.history.state, '', url);
     return sessionId;

@@ -4,8 +4,9 @@ const VALID_UUID = '123e4567-e89b-42d3-a456-426614174000';
 
 describe('session service', function () {
     afterEach(function () {
-        // jsdom : remettre l'URL de la page à blanc entre les tests
+        // jsdom : remettre l'URL de la page et le storage à blanc entre les tests
         window.history.replaceState(null, '', '/');
+        localStorage.clear();
     });
 
     describe('isValidSessionId()', function () {
@@ -93,6 +94,23 @@ describe('session service', function () {
             const sessionId = getOrCreateSessionId();
             expect(isValidSessionId(sessionId)).toBe(true);
             expect(sessionId).not.toBe('not-a-uuid');
+        });
+
+        it('should reuse the generated sessionId on a fresh page of the same browser (télécommande)', function () {
+            // Onglet 1 : l'index génère un id
+            const sessionId = getOrCreateSessionId();
+            // Onglet 2 : nouvel index, sans ?s= dans l'URL
+            window.history.replaceState(null, '', '/');
+            expect(getOrCreateSessionId()).toBe(sessionId);
+        });
+
+        it('should not persist a sessionId coming from the url (pas de fixation de session)', function () {
+            // Une page ouverte avec le token de quelqu'un d'autre le rejoint...
+            window.history.replaceState(null, '', `/?${SESSION_PARAM}=${VALID_UUID}`);
+            expect(getOrCreateSessionId()).toBe(VALID_UUID);
+            // ... mais un index ouvert ensuite sans token ne doit PAS hériter de cet id
+            window.history.replaceState(null, '', '/');
+            expect(getOrCreateSessionId()).not.toBe(VALID_UUID);
         });
     });
 });
