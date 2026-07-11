@@ -13,7 +13,7 @@ describe('Integration — Router', function () {
     });
 
     describe('CORS headers', function () {
-        it('should include Access-Control-Allow-Origin header in responses', async function () {
+        it('should echo an allowed origin in Access-Control-Allow-Origin', async function () {
             vi.stubGlobal(
                 'fetch',
                 vi.fn().mockResolvedValue({
@@ -24,7 +24,21 @@ describe('Integration — Router', function () {
 
             const res = await request(app).get('/patcher?tc-presentation-url=http://localhost:3002/index.html').set('Origin', 'http://localhost:3000');
 
-            expect(res.headers).toHaveProperty('access-control-allow-origin');
+            expect(res.headers['access-control-allow-origin']).toBe('http://localhost:3000');
+        });
+
+        it('should not set Access-Control-Allow-Origin for an origin outside the allowlist', async function () {
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    status: 200,
+                    text: async () => '<html><head></head><body></body></html>'
+                })
+            );
+
+            const res = await request(app).get('/patcher?tc-presentation-url=http://localhost:3002/index.html').set('Origin', 'https://evil.example.com');
+
+            expect(res.headers['access-control-allow-origin']).toBeUndefined();
         });
 
         it('should respond to OPTIONS preflight on /patcher', async function () {
