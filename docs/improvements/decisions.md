@@ -180,16 +180,58 @@ redux/bulma/lit-element intacts (étapes 08-12).
 
 ## IMP-005 — CSS Bulma partagé via adoptedStyleSheets
 
-**Étape :** 08 | **Statut :** ⬜
+**Étape :** 08 | **Statut :** ✅ (décision prise)
 
 ### Contexte
-Bulma dupliqué dans 13 shadow roots (~200K ×13) + CSS global → bundle 308K.
+Bulma injecté dans le shadow DOM des 13 web components via `unsafeCSS(bulma.min.css?raw)`
+(`bulmaStyles` dans `lit-styles-compat.ts`), listé dans `static get styles()` de chacun.
 
-### Décision (à confirmer)
-`CSSStyleSheet` construite unique adoptée par tous les shadow roots. Composants ne gardent que leur CSS propre.
+**Découverte avant implémentation, qui change la portée du problème** : sur navigateur evergreen
+(Chromium, cible réelle du build), il n'y a **déjà aucune duplication de parsing/mémoire** aujourd'hui.
+Lit (`@lit/reactive-element` 2.1.2) cache le `CSSStyleSheet` construit *sur l'instance `CSSResult`
+elle-même* (`get styleSheet()` dans `css-tag.js`, propriété `this.o`). Comme `bulmaStyles` est un
+singleton de module importé par les 13 composants, tous récupèrent la même instance construite —
+vérifié empiriquement (test Chromium réel : `tc-clock` et `tc-timer` partagent `sheetA === sheetB`,
+1795 règles identiques). Le problème décrit dans l'audit et le step-08.md initial ("le CSS est
+parsé/dupliqué dans chaque shadow root à l'exécution") ne se produit donc pas sur la cible actuelle —
+c'était un risque réel uniquement sur le chemin de repli `<style>`-par-shadow-root (navigateurs sans
+support `adoptedStyleSheets`, marginal depuis 2023), ou potentiellement sur une version de Lit plus
+ancienne sans ce cache par instance.
+
+### Décision
+Rendre le partage **explicite** malgré cette découverte : une `CSSStyleSheet` construite une fois
+(`bulmaSheet`/`faSheet` dans `lit-styles-compat.ts`), adoptée par tous les shadow roots via une classe
+de base `TcStyledElement` (`connectedCallback` + `adoptedStyleSheets`), plutôt que de dépendre d'un
+détail d'implémentation interne de Lit non documenté et donc susceptible de changer sans préavis entre
+versions majeures. `TcStyledWithFaElement` (sous-classe) ajoute la feuille FontAwesome pour les 3
+composants qui en ont besoin (menu-navigation, menu-plugins, view-selector). Les 13 composants
+n'incluent plus `bulmaStyles`/`faStyles` dans `static get styles()`.
+
+**Piège trouvé et corrigé en cours d'implémentation** : la feuille partagée doit être **préfixée**,
+pas ajoutée en queue, dans `shadowRoot.adoptedStyleSheets`. À l'origine `[bulmaStyles, css\`...\`]`
+plaçait Bulma en premier et le CSS du composant après (donc prioritaire à spécificité égale). Une
+première version ajoutait la feuille partagée après le CSS propre (posé par Lit avant que
+`connectedCallback` de la sous-classe ne s'exécute), ce qui inversait la cascade et aurait laissé
+Bulma écraser silencieusement les surcharges des 8 composants ayant leur propre CSS (loader,
+magic-info-tutorial, menu-plugins, notes, slide-view, timer, touch-pointer-mask,
+touch-pointer-settings). Détecté par un test ad hoc vérifiant l'ordre réel des `adoptedStyleSheets`
+et le nombre de règles par feuille — pas par une simple vérification de type/longueur.
 
 ### Conséquences
-Réduction bundle/mémoire (à mesurer), régénération du snapshot visuel smoke, vérif support jsdom.
+- **Aucune réduction de bundle** (attendu, mais à l'inverse de ce que le step-08.md initial anticipait
+  "nettement sous 308K") : le texte brut de Bulma doit de toute façon être importé une fois pour
+  construire la `CSSStyleSheet`, qu'elle soit implicite (avant) ou explicite (après). Mesuré :
+  `free-solid-svg-icons-UnvEX2bK.bundle.js` 304K avant/après (nom de chunk trompeur — hérité du hash
+  Rollup, contient en fait la string Bulma, confirmé par grep), `free-solid-svg-icons.css` 192K
+  inchangé (CSS global light-DOM des layouts, non affecté par ce refactor).
+- Aucune régression fonctionnelle : `npx tsc`, lint, 380 tests unitaires, 27 tests composants
+  (Chromium réel), 35 tests e2e golden-path, `npm audit` 0 — tous verts.
+- Pas de snapshot visuel à régénérer : aucun mécanisme `toMatchScreenshot`/snapshot n'existe dans le
+  repo (`grep` sur `test/` et les configs vitest ne remonte rien) ; le PNG dans
+  `test/client/web-components/__screenshots__/` est un artefact orphelin d'un échec antérieur, pas
+  une baseline maintenue.
+- jsdom 29.1.1 : `CSSStyleSheet`/`replaceSync`/`adoptedStyleSheets` fonctionnent nativement, aucun
+  shim requis (confirmé par la suite jsdom existante, qui n'importe d'ailleurs aucun web component).
 
 > Note : numérotation IMP-005/006/007/008 réassignée par ordre d'étape lors de l'implémentation si besoin —
 > les numéros ci-dessous suivent l'ordre des étapes, pas l'ordre de décision.

@@ -66,3 +66,57 @@ npm run test:e2e          # golden-path : apparence intacte (le snapshot visuel 
 - Le snapshot visuel `test/client/web-components/__screenshots__/…smoke….png` va probablement changer
   (même rendu, mais régénéré) — le régénérer sciemment, vérifier visuellement qu'il est correct.
 - Ne PAS upgrader Bulma ici (c'est l'étape 09) — d'abord une seule source, ensuite l'upgrade.
+
+## Résultats de validation
+
+### Découverte préalable — le problème décrit n'existe déjà plus sur la cible réelle
+
+Avant d'implémenter, vérification empirique (test Chromium réel, `vitest.browser.config.ts`) : Lit
+(`@lit/reactive-element` 2.1.2) cache le `CSSStyleSheet` construit **sur l'instance `CSSResult`
+elle-même** (`get styleSheet()`, `css-tag.js`). `bulmaStyles` étant un singleton de module importé par
+les 13 composants, ils récupéraient déjà tous **la même instance construite** avant ce refactor
+(`tc-clock` et `tc-timer` : `sheetA === sheetB` → `true`, 1795 règles). Le "CSS parsé/dupliqué dans
+chaque shadow root à l'exécution" décrit dans ce fichier et dans l'audit ne se produit donc pas sur
+Chromium evergreen — voir IMP-005 dans `decisions.md` pour le détail. Décision : implémenter quand
+même le partage explicite, pour ne plus dépendre d'un détail d'implémentation interne de Lit non
+documenté.
+
+### Bug trouvé et corrigé en cours de route — ordre de cascade
+
+Une première version ajoutait la feuille partagée **après** les styles propres du composant dans
+`adoptedStyleSheets` (donc dans `super.connectedCallback()`, une fois que Lit a déjà posé le CSS du
+composant). Un test ad hoc vérifiant l'ordre réel des feuilles (pas juste leur présence) a montré que
+ça inverse la cascade par rapport à l'original `[bulmaStyles, css\`...\`]` : Bulma se serait retrouvé
+prioritaire sur les 8 composants ayant leur propre CSS (loader, magic-info-tutorial, menu-plugins,
+notes, slide-view, timer, touch-pointer-mask, touch-pointer-settings), au lieu de l'inverse. Corrigé
+en préfixant la feuille partagée (`[...missing, ...adoptedStyleSheets]`) — voir le commentaire dans
+`TcStyledElement.connectedCallback` (`lit-styles-compat.ts`).
+
+### Mesures avant/après (`npm run build && du -h dist/*.bundle.js dist/*.css`)
+
+| Fichier | Avant | Après |
+|---|---|---|
+| `free-solid-svg-icons-*.bundle.js` (contient la string Bulma, confirmé par `grep -c bulma`) | 304K | 304K |
+| `free-solid-svg-icons.css` (CSS global light-DOM des layouts) | 192K | 192K |
+
+**Aucune réduction de bundle**, à l'inverse de l'attente initiale ("nettement sous 308K") : le texte
+brut de Bulma doit être importé une fois pour construire la `CSSStyleSheet`, que ce soit implicitement
+(avant, via `unsafeCSS`) ou explicitement (après, via `replaceSync`). Le gain de ce refactor n'est donc
+pas la taille du bundle, mais l'explicitation du partage (robustesse face à un changement de version
+de Lit) et le retrait du boilerplate `bulmaStyles`/`faStyles` des 13 `static get styles()`.
+
+### Suites de validation
+
+```
+npx tsc --noEmit          # 0 erreur
+npm run lint              # 0 erreur
+NODE_ENV=test npm test    # 380 tests, 36 fichiers — vert
+npm run test:components   # 27 tests, 5 fichiers (Chromium réel) — vert
+npm run test:e2e          # 35 tests golden-path + legacy — vert
+npm run build             # OK
+npm audit                 # 0 vulnérabilité
+```
+
+Pas de snapshot visuel à régénérer : `grep -rn "toMatchScreenshot\|screenshot" test/` ne remonte rien.
+Le PNG dans `test/client/web-components/__screenshots__/` est un artefact orphelin (capture d'échec
+d'un run antérieur), pas une baseline maintenue par un test.
