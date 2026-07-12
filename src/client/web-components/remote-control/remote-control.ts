@@ -1,24 +1,25 @@
+import { customElement, query } from 'lit/decorators.js';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 import { html } from 'lit';
 import { config } from '@services/config';
 import { getOrCreateSessionId, withSessionId } from '@services/session';
 import QRCode from 'qrcode';
 
-class RemoteControlComponent extends TcStyledElement {
-    static get properties() {
-        return {};
-    }
+@customElement('tc-remote-control')
+export class RemoteControlComponent extends TcStyledElement {
+    @query('#qrCode') qrCode!: HTMLCanvasElement;
+    @query('#textCode') textCode!: HTMLElement;
+    @query('#qrCodeSection') qrCodeSection!: HTMLElement;
 
     firstUpdated(): void {
         if (config.tcController.urls.external) {
             // L'URL du QR code doit porter le token de session : sans lui, le
             // mobile serait rejeté par le serveur socket (IMP-002).
             const remoteUrl = withSessionId(config.tcController.urls.external, getOrCreateSessionId());
-            QRCode.toCanvas(this.shadowRoot!.getElementById('qrCode') as HTMLCanvasElement, remoteUrl);
-            this.shadowRoot!.getElementById('textCode')!.innerHTML =
-                `<a href="${remoteUrl}" title="Use this url to connect to TalkControl from another device">${remoteUrl}</a>`;
+            QRCode.toCanvas(this.qrCode, remoteUrl);
+            this.textCode.innerHTML = `<a href="${remoteUrl}" title="Use this url to connect to TalkControl from another device">${remoteUrl}</a>`;
         } else {
-            this.shadowRoot!.getElementById('qrCodeSection')!.classList.add('is-hidden');
+            this.qrCodeSection.classList.add('is-hidden');
         }
     }
 
@@ -40,5 +41,3 @@ class RemoteControlComponent extends TcStyledElement {
         `;
     }
 }
-
-customElements.define('tc-remote-control', RemoteControlComponent);
