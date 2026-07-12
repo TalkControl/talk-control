@@ -1,6 +1,6 @@
 import { loadPluginModule } from '@plugins/plugin-loader';
 import { TCController } from '@client/tc-controller/tc-controller';
-import { TCComponent } from '@client/tc-component/tc-component';
+import type { TCComponentHost } from '@event-bus/event-bus-component';
 
 function activateOnController(pluginName: string, controller: TCController): Promise<void> {
     return loadPluginModule(pluginName)
@@ -28,7 +28,7 @@ function deactivateOnController(pluginName: string): Promise<void> {
         .catch(e => console.error('Unable to unload plugin module', e));
 }
 
-function activateOnComponent(pluginName: string, component: TCComponent): Promise<void> {
+function activateOnComponent(pluginName: string, component: TCComponentHost): Promise<void> {
     return loadPluginModule(pluginName)
         .then(plugin => {
             if (!plugin) return;

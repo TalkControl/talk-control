@@ -1,18 +1,11 @@
-import { EventBusComponent } from '@event-bus/event-bus-component';
+import { TCComponentWrapper } from '@event-bus/tc-component-wrapper';
 
 interface TimerHost {
     reset(): void;
 }
 
-export class TimerTCComponent extends EventBusComponent {
-    timer: TimerHost;
-
-    constructor(timer: TimerHost) {
-        super();
-        this.timer = timer;
-    }
-
+export class TimerTCComponent extends TCComponentWrapper<TimerHost> {
     override init(): void {
-        this.timer.reset();
+        this.host.reset();
     }
 }

@@ -1,23 +1,16 @@
-import { EventBusComponent } from '@event-bus/event-bus-component';
+import { TCComponentWrapper } from '@event-bus/tc-component-wrapper';
 
 interface LoaderHost {
     showSuccess(): void;
     showError(): void;
 }
 
-export class TCComponentLoaderComponent extends EventBusComponent {
-    loader: LoaderHost;
-
-    constructor(loader: LoaderHost) {
-        super();
-        this.loader = loader;
-    }
-
+export class TCComponentLoaderComponent extends TCComponentWrapper<LoaderHost> {
     override init(): void {
-        this.loader.showSuccess();
+        this.host.showSuccess();
     }
 
     override error(): void {
-        this.loader.showError();
+        this.host.showError();
     }
 }
