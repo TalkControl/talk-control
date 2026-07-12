@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
+import { tsconfigAliases } from './vite.aliases';
 import { resolve, relative, join, dirname, basename } from 'path';
 import { existsSync, readdirSync, readFileSync, writeFileSync, rmSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -89,16 +89,11 @@ function devUrlRewrite(): Plugin {
 }
 
 export default defineConfig({
-    plugins: [tsconfigPaths({ loose: true }), flatHtmlOutput(), devUrlRewrite()],
+    plugins: [flatHtmlOutput(), devUrlRewrite()],
     base: './',
     resolve: {
         alias: {
-            '@event-bus': resolve(__dirname, 'src/common/event-bus'),
-            '@services': resolve(__dirname, 'src/common/services'),
-            '@client': resolve(__dirname, 'src/client'),
-            '@plugins': resolve(__dirname, 'src/plugins'),
-            '@config': resolve(__dirname, 'config'),
-            '@compat': resolve(__dirname, 'src/compat'),
+            ...tsconfigAliases,
             // socket.io is server-only; replace with an empty stub for browser builds
             'socket.io': resolve(__dirname, 'src/compat/socket-io-browser-stub.ts')
         }
