@@ -1,25 +1,22 @@
+import { customElement, query } from 'lit/decorators.js';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 import { html, css } from 'lit';
 import { TimerTCComponent } from './timer-tc-component';
 
-class TimerComponent extends TcStyledElement {
-    timerElement!: Element;
+@customElement('tc-timer')
+export class TimerComponent extends TcStyledElement {
+    @query('#timer') timerElement!: HTMLElement;
     restartTimer: () => void = () => undefined;
 
-    static get styles() {
-        return [
-            css`
-                #timer {
-                    cursor: pointer;
-                    user-select: none;
-                }
-            `
-        ];
-    }
+    static styles = css`
+        #timer {
+            cursor: pointer;
+            user-select: none;
+        }
+    `;
 
     firstUpdated(): void {
         new TimerTCComponent(this);
-        this.timerElement = this.shadowRoot!.querySelector('#timer')!;
     }
 
     formatTime(time: number): string | number {
@@ -61,5 +58,3 @@ class TimerComponent extends TcStyledElement {
         return html` <div class="is-size-3 is-unselectable" id="timer" @click="${this.reset}">00:00:00</div> `;
     }
 }
-
-customElements.define('tc-timer', TimerComponent);

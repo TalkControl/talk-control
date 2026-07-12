@@ -19,6 +19,7 @@
         "moduleResolution": "bundler",
         "target": "ES2022",
         "useDefineForClassFields": false,
+        "experimentalDecorators": true,
         "allowJs": true,
         "allowImportingTsExtensions": true,
         "types": ["vitest/globals"]
