@@ -19,6 +19,7 @@
         "smoke:server": "npx tsx src/server/index.ts",
         "start:e2e": "npx npm-run-all --parallel tc-server tc-showcase tc-controller-and-component",
         "lint": "eslint --fix . --cache",
+        "lint:check": "eslint . --cache",
         "tc-showcase": "node scripts/sync-showcase-reveal.mjs && npx http-server showcase -s -p 3002",
         "tc-controller-and-component": "vite --port 3000",
         "tc-server": "npx nodemon --exec \"npx tsx\" src/server/index.ts",

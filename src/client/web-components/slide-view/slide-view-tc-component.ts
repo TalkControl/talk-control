@@ -22,6 +22,9 @@ export class SlideViewTCComponent extends EventBusComponent {
         this.controllerComponentChannel.on('activatePlugin', (data: unknown) => {
             const { pluginName } = data as { pluginName: string };
 
+            // SlideViewTCComponent doesn't extend TCComponent (no engine/delta/shadowRoot) — the
+            // structural gap belongs to the component hierarchy unification tracked in étape 11.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             pluginService.activateOnComponent(pluginName, this as any);
         });
     }

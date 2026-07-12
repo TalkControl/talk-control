@@ -10,7 +10,7 @@ interface ClientSlide {
 export class RevealEngine extends GenericEngine {
     callbackEngine: null = null;
 
-    Reveal: any;
+    Reveal: RevealApi;
 
     constructor() {
         super();

@@ -14,8 +14,10 @@ const srcDir = join(root, 'src');
 const partsDir = join(root, 'docs-sources/developers/code/parts');
 
 /**
+ * Recursively collects .js source files under `dir`, excluding *.spec.js.
  *
- * @param dir
+ * @param {string} dir - directory to scan
+ * @returns {string[]} absolute paths of matching files
  */
 function findJsFiles(dir) {
     const entries = readdirSync(dir, { withFileTypes: true });
