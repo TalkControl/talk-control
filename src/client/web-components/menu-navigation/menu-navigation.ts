@@ -1,19 +1,14 @@
-import { customElement, query } from 'lit/decorators.js';
-import { TcStyledWithFaElement } from '@compat/lit-styles-compat';
+import { customElement } from 'lit/decorators.js';
+import { DropdownMenuElement } from '@client/web-components/shared/dropdown-menu-element';
 import { html } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faBars, faHome, faDesktop, faChalkboardTeacher, faMobileAlt } from '@fortawesome/free-solid-svg-icons';
 
 @customElement('tc-menu-navigation')
-export class MenuNavigationComponent extends TcStyledWithFaElement {
-    @query('#menuButton') menuButton!: HTMLElement;
-    @query('#menuDropdown') menuDropdown!: HTMLElement;
-
+export class MenuNavigationComponent extends DropdownMenuElement {
     firstUpdated(): void {
-        this.menuButton.addEventListener('click', () => {
-            this.menuDropdown.classList.toggle('is-active');
-        });
+        this._initDropdownToggle();
     }
 
     render() {

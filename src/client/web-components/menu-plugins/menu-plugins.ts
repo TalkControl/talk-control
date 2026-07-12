@@ -1,15 +1,13 @@
 import { customElement, query } from 'lit/decorators.js';
 import { MenuPluginsTCComponent } from './menu-plugins-tc-component';
-import { TcStyledWithFaElement } from '@compat/lit-styles-compat';
+import { DropdownMenuElement } from '@client/web-components/shared/dropdown-menu-element';
 import { html, css } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faCube } from '@fortawesome/free-solid-svg-icons';
 
 @customElement('tc-menu-plugins')
-export class MenuPluginsComponent extends TcStyledWithFaElement {
-    @query('#menuButton') menuButton!: HTMLElement;
-    @query('#menuDropdown') menuDropdown!: HTMLElement;
+export class MenuPluginsComponent extends DropdownMenuElement {
     @query('#closeButton') closeButton!: HTMLElement;
     @query('#pluginsList') pluginsList!: HTMLElement;
 
@@ -23,9 +21,7 @@ export class MenuPluginsComponent extends TcStyledWithFaElement {
     `;
 
     firstUpdated(): void {
-        this.menuButton.addEventListener('click', () => {
-            this.menuDropdown.classList.toggle('is-active');
-        });
+        this._initDropdownToggle();
         this.menuPluginsTcComponent = new MenuPluginsTCComponent(this);
         this.closeButton.addEventListener('click', () => this.closeButtonClick());
     }
