@@ -82,7 +82,7 @@ Garde-fous quel que soit le modèle : exécuter réellement les 6 commandes de v
 
 | Étape | Statut | Contenu |
 |---|---|---|
-| [10 — lit-element → lit](step-10-lit.md) | ⬜ | Package `lit`, décorateurs, factorisation (formatTime, menus, wrappers) |
+| [10 — lit-element → lit](step-10-lit.md) | ✅ | Package `lit`, décorateurs legacy (voir IMP-006), factorisation (formatTime, menus, wrappers) |
 | [11 — Event-bus typé](step-11-typed-event-bus.md) | ⬜ | Event map TypeScript, suppression des ~30 casts |
 | [12 — Redux → store minimal](step-12-remove-redux.md) | ⬜ | Store typé maison, suppression de redux/redux-logger/redux-mock-store |
 | [13 — Moteur serveur](step-13-server-engine.md) | ⬜ | Dédup handleInput/handleTouch, fixes datés (keypressed, keyCode, innerHTML, logger) |
