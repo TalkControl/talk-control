@@ -25,7 +25,7 @@ jobs:
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci --legacy-peer-deps
+              run: npm ci
 
             - name: Run tests
               run: NODE_ENV=test npm test
@@ -46,7 +46,7 @@ jobs:
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci --legacy-peer-deps
+              run: npm ci
 
             - name: Install Playwright chromium
               run: npx playwright install chromium --with-deps
@@ -70,7 +70,7 @@ jobs:
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci --legacy-peer-deps
+              run: npm ci
 
             - name: Install Playwright chromium
               run: npx playwright install chromium --with-deps
@@ -94,7 +94,7 @@ jobs:
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci --legacy-peer-deps
+              run: npm ci
 
             - name: Install Playwright chromium
               run: npx playwright install chromium --with-deps
@@ -118,7 +118,7 @@ jobs:
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci --legacy-peer-deps
+              run: npm ci
 
             - name: Build (production)
               run: npm run build
@@ -139,7 +139,7 @@ jobs:
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci --legacy-peer-deps
+              run: npm ci
 
             - name: TypeScript strict check
               run: npx tsc --noEmit
@@ -160,7 +160,7 @@ jobs:
                   cache: 'npm'
 
             - name: Install dependencies
-              run: npm ci --legacy-peer-deps
+              run: npm ci
 
             - name: Start server in background
               run: npm run smoke:server &
