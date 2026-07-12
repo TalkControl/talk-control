@@ -1,11 +1,12 @@
+import { customElement, query } from 'lit/decorators.js';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 import { html } from 'lit';
 
-class ClockComponent extends TcStyledElement {
-    clock!: Element;
+@customElement('tc-clock')
+export class ClockComponent extends TcStyledElement {
+    @query('#clock') clock!: HTMLElement;
 
     firstUpdated(): void {
-        this.clock = this.shadowRoot!.querySelector('#clock')!;
         this.startClock();
     }
 
@@ -28,5 +29,3 @@ class ClockComponent extends TcStyledElement {
         return html` <p class="is-size-4" id="clock">00:00</p> `;
     }
 }
-
-customElements.define('tc-clock', ClockComponent);
