@@ -1,17 +1,18 @@
+import { customElement, query } from 'lit/decorators.js';
 import { TcStyledWithFaElement } from '@compat/lit-styles-compat';
 import { html } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faBars, faHome, faDesktop, faChalkboardTeacher, faMobileAlt } from '@fortawesome/free-solid-svg-icons';
 
-class MenuNavigationComponent extends TcStyledWithFaElement {
-    static get properties() {
-        return {};
-    }
+@customElement('tc-menu-navigation')
+export class MenuNavigationComponent extends TcStyledWithFaElement {
+    @query('#menuButton') menuButton!: HTMLElement;
+    @query('#menuDropdown') menuDropdown!: HTMLElement;
 
     firstUpdated(): void {
-        this.shadowRoot!.getElementById('menuButton')!.addEventListener('click', () => {
-            this.shadowRoot!.getElementById('menuDropdown')!.classList.toggle('is-active');
+        this.menuButton.addEventListener('click', () => {
+            this.menuDropdown.classList.toggle('is-active');
         });
     }
 
@@ -36,5 +37,3 @@ class MenuNavigationComponent extends TcStyledWithFaElement {
         `;
     }
 }
-
-customElements.define('tc-menu-navigation', MenuNavigationComponent);
