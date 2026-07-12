@@ -1,11 +1,10 @@
-import { LitElement, html, css } from 'lit-element';
+import { html, css } from 'lit-element';
 import { NotesTCComponent } from './notes-tc-component';
-import { bulmaStyles } from '@compat/lit-styles-compat';
+import { TcStyledElement } from '@compat/lit-styles-compat';
 
-class NotesComponent extends LitElement {
+class NotesComponent extends TcStyledElement {
     static get styles() {
         return [
-            bulmaStyles,
             css`
                 .block-title {
                     height: 2rem;

@@ -1,8 +1,8 @@
 import { SlideViewTCComponent } from './slide-view-tc-component';
-import { bulmaStyles } from '@compat/lit-styles-compat';
-import { LitElement, html, css } from 'lit-element';
+import { TcStyledElement } from '@compat/lit-styles-compat';
+import { html, css } from 'lit-element';
 
-class SlideViewComponent extends LitElement {
+class SlideViewComponent extends TcStyledElement {
     declare url: string;
     declare delta: string;
     declare fullscreen: boolean;
@@ -26,7 +26,6 @@ class SlideViewComponent extends LitElement {
 
     static get styles() {
         return [
-            bulmaStyles,
             css`
                 iframe,
                 section {

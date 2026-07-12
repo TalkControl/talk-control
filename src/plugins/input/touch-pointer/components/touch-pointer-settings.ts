@@ -1,8 +1,8 @@
-import { LitElement, html, css, PropertyValues } from 'lit-element';
+import { html, css, PropertyValues } from 'lit-element';
 import { TouchPointerSettingsTCComponent } from './touch-pointer-settings-tc-component';
-import { bulmaStyles } from '@compat/lit-styles-compat';
+import { TcStyledElement } from '@compat/lit-styles-compat';
 
-class TouchPointerSettingsComponent extends LitElement {
+class TouchPointerSettingsComponent extends TcStyledElement {
     // `declare` (not plain class fields) is required here: with this project's ES2022
     // target, useDefineForClassFields shadows Lit's reactive property accessors and
     // silently breaks rendering entirely (see slide-view.ts for the same pattern).
@@ -16,7 +16,6 @@ class TouchPointerSettingsComponent extends LitElement {
 
     static get styles() {
         return [
-            bulmaStyles,
             css`
                 :host {
                     --size-button: 40px;

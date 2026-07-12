@@ -1,12 +1,8 @@
-import { bulmaStyles } from '@compat/lit-styles-compat';
-import { LitElement, html } from 'lit-element';
+import { TcStyledElement } from '@compat/lit-styles-compat';
+import { html } from 'lit-element';
 
-class ClockComponent extends LitElement {
+class ClockComponent extends TcStyledElement {
     clock!: Element;
-
-    static get styles() {
-        return [bulmaStyles];
-    }
 
     firstUpdated(): void {
         this.clock = this.shadowRoot!.querySelector('#clock')!;

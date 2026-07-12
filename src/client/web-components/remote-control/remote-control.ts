@@ -1,16 +1,12 @@
-import { bulmaStyles } from '@compat/lit-styles-compat';
-import { LitElement, html } from 'lit-element';
+import { TcStyledElement } from '@compat/lit-styles-compat';
+import { html } from 'lit-element';
 import { config } from '@services/config';
 import { getOrCreateSessionId, withSessionId } from '@services/session';
 import QRCode from 'qrcode';
 
-class RemoteControlComponent extends LitElement {
+class RemoteControlComponent extends TcStyledElement {
     static get properties() {
         return {};
-    }
-
-    static get styles() {
-        return [bulmaStyles];
     }
 
     firstUpdated(): void {

@@ -1,14 +1,10 @@
 import config from '@config/config.json';
-import { LitElement, html } from 'lit-element';
+import { html } from 'lit-element';
 import { isValidUrl } from '@services/url';
 import contextService from '@services/context';
-import { bulmaStyles } from '@compat/lit-styles-compat';
+import { TcStyledElement } from '@compat/lit-styles-compat';
 
-class UrlFormComponent extends LitElement {
-    static get styles() {
-        return [bulmaStyles];
-    }
-
+class UrlFormComponent extends TcStyledElement {
     firstUpdated(): void {
         const presentationUrl = this.shadowRoot!.getElementById('presentationUrl') as HTMLInputElement;
         const validateButton = this.shadowRoot!.getElementById('validateButton')!;
