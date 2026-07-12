@@ -1,5 +1,5 @@
 import { TcStyledElement } from '@compat/lit-styles-compat';
-import { html, css } from 'lit-element';
+import { html, css } from 'lit';
 import { TCComponentLoaderComponent } from '@client/web-components/loader/loader-tc-component';
 
 class LoaderComponent extends TcStyledElement {

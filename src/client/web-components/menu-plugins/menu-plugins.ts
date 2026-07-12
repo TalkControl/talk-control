@@ -1,7 +1,7 @@
 import { MenuPluginsTCComponent } from './menu-plugins-tc-component';
 import { TcStyledWithFaElement } from '@compat/lit-styles-compat';
-import { html, css } from 'lit-element';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
+import { html, css } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faCube } from '@fortawesome/free-solid-svg-icons';
 

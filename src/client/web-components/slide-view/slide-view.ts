@@ -1,6 +1,6 @@
 import { SlideViewTCComponent } from './slide-view-tc-component';
 import { TcStyledElement } from '@compat/lit-styles-compat';
-import { html, css } from 'lit-element';
+import { html, css } from 'lit';
 
 class SlideViewComponent extends TcStyledElement {
     declare url: string;

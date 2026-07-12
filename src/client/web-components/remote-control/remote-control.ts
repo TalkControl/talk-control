@@ -1,5 +1,5 @@
 import { TcStyledElement } from '@compat/lit-styles-compat';
-import { html } from 'lit-element';
+import { html } from 'lit';
 import { config } from '@services/config';
 import { getOrCreateSessionId, withSessionId } from '@services/session';
 import QRCode from 'qrcode';

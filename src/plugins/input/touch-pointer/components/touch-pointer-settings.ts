@@ -1,4 +1,4 @@
-import { html, css, PropertyValues } from 'lit-element';
+import { html, css, PropertyValues } from 'lit';
 import { TouchPointerSettingsTCComponent } from './touch-pointer-settings-tc-component';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 

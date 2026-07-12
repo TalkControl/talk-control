@@ -1,4 +1,4 @@
-import { html, css } from 'lit-element';
+import { html, css } from 'lit';
 import { NotesTCComponent } from './notes-tc-component';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 

@@ -1,5 +1,5 @@
 import { TcStyledElement } from '@compat/lit-styles-compat';
-import { html, css } from 'lit-element';
+import { html, css } from 'lit';
 import { TimerTCComponent } from './timer-tc-component';
 
 class TimerComponent extends TcStyledElement {

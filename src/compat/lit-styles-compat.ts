@@ -1,4 +1,4 @@
-import { LitElement, unsafeCSS } from 'lit-element';
+import { LitElement, unsafeCSS } from 'lit';
 import bulmaCss from 'bulma/css/bulma.min.css?raw';
 
 export const bulmaStyles = unsafeCSS(bulmaCss);

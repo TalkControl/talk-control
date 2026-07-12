@@ -1,4 +1,4 @@
-import { html, css, PropertyValues } from 'lit-element';
+import { html, css, PropertyValues } from 'lit';
 import { TouchPointerMaskTCComponent } from './touch-pointer-mask-tc-component';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 

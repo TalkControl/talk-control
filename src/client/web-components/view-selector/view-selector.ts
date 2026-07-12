@@ -1,6 +1,6 @@
 import { TcStyledWithFaElement } from '@compat/lit-styles-compat';
-import { html } from 'lit-element';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
+import { html } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faChalkboard, faChalkboardTeacher } from '@fortawesome/free-solid-svg-icons';
 import { getOrCreateSessionId, withSessionId } from '@services/session';

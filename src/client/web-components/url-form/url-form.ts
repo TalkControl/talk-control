@@ -1,5 +1,5 @@
 import config from '@config/config.json';
-import { html } from 'lit-element';
+import { html } from 'lit';
 import { isValidUrl } from '@services/url';
 import contextService from '@services/context';
 import { TcStyledElement } from '@compat/lit-styles-compat';

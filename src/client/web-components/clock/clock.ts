@@ -1,5 +1,5 @@
 import { TcStyledElement } from '@compat/lit-styles-compat';
-import { html } from 'lit-element';
+import { html } from 'lit';
 
 class ClockComponent extends TcStyledElement {
     clock!: Element;
