@@ -1,38 +1,36 @@
+import { customElement } from 'lit/decorators.js';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 import { html, css } from 'lit';
 import { TCComponentLoaderComponent } from '@client/web-components/loader/loader-tc-component';
 
-class LoaderComponent extends TcStyledElement {
-    static get styles() {
-        return [
-            css`
-                :host {
-                }
-                .tc-loader {
-                    background-color: grey;
-                    position: absolute;
-                    width: 100%;
-                    height: 100%;
-                    margin: 0;
-                    padding: 0;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    border-radius: 6px;
-                    opacity: 0;
-                    z-index: -1;
-                }
-                .tc-loader.is-active {
-                    opacity: 1;
-                    z-index: 1;
-                }
-                .loader {
-                    height: 80px;
-                    width: 80px;
-                }
-            `
-        ];
-    }
+@customElement('tc-loader')
+export class LoaderComponent extends TcStyledElement {
+    static styles = css`
+        :host {
+        }
+        .tc-loader {
+            background-color: grey;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 6px;
+            opacity: 0;
+            z-index: -1;
+        }
+        .tc-loader.is-active {
+            opacity: 1;
+            z-index: 1;
+        }
+        .loader {
+            height: 80px;
+            width: 80px;
+        }
+    `;
 
     firstUpdated(): void {
         new TCComponentLoaderComponent(this);
@@ -58,5 +56,3 @@ class LoaderComponent extends TcStyledElement {
         `;
     }
 }
-
-customElements.define('tc-loader', LoaderComponent);
