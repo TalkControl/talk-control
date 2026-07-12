@@ -45,3 +45,22 @@ Vérification visuelle manuelle : controller, on-stage, presenter, menu plugins,
 - Le snapshot visuel smoke va changer : le régénérer sciemment.
 - Cette étape est purement cosmétique/dépendance : si le budget est serré, elle peut être reportée sans
   bloquer les phases D/E/F (Bulma 0.9 fonctionne). Le noter comme optionnelle si besoin.
+
+## Résultats de validation
+
+- `bulma` 0.9.0 → 1.0.4. Import `bulma/css/bulma.min.css?raw` inchangé, chemin toujours valide.
+- Classes cassées : `is-marginless`/`is-paddingless` (supprimées en 1.0), remplacées par `m-0`/`p-0`
+  (mêmes règles `margin: 0 !important`/`padding: 0 !important`) dans `presenter.html` et
+  `on-stage.html`. `is-margin-less` (coquille préexistante, jamais valide dans aucune version)
+  signalée mais non corrigée, hors scope.
+- Audit complet des ~60 classes Bulma utilisées dans les 13 composants + layouts par grep direct
+  sur le CSS 1.0.4 réellement installé : aucune autre casse. Détail dans `decisions.md` (IMP-005b).
+- Poids CSS gzippé du chunk partagé Bulma/FontAwesome (mesuré via `npm run build`, baseline 0.9
+  mesurée dans un worktree isolé) : **26,06 kB → 65,79 kB** (×2,52), conforme à l'estimation qui a
+  motivé la décision d'assumer le coût.
+- `tsc --noEmit` : ok. `npm run lint` : ok. `npm run test` : 380/380. `npm run test:components` :
+  27/27. `npm run test:e2e` : 35/35. `npm audit` : 0 vulnérabilité.
+- Vérification visuelle manuelle (serveur dev réel + Playwright, pas de snapshot automatisé) :
+  controller (formulaire + état d'erreur), écran de choix de vue, on-stage (dropdowns Navigation
+  et Plugins, activation touch-pointer), presenter (colonnes, timer, notes) — aucune régression
+  constatée.

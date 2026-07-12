@@ -238,6 +238,70 @@ et le nombre de règles par feuille — pas par une simple vérification de type
 
 ---
 
+## IMP-005b — Bulma 0.9.0 → 1.0.4
+
+**Étape :** 09 | **Statut :** ✅
+
+### Contexte
+Étape 08 ayant unifié la source CSS (`bulma/css/bulma.min.css?raw` dans `lit-styles-compat.ts`),
+l'upgrade Bulma ne se fait plus qu'à un seul endroit. Bulma 1.0 est une réécriture CSS custom
+properties (`--bulma-*`) / dart-sass, chaque variante de couleur/thème étant désormais écrite en
+dur dans la distribution `bulma.min.css` plutôt que calculée en Sass à la compilation.
+
+### Décision
+Upgrader quand même, coût assumé, sans sous-ensemble Sass personnalisé pour réduire le poids —
+cohérent avec l'approche « import `?raw` de la distribution complète » retenue depuis le début du
+projet plutôt qu'un build Sass sur mesure.
+
+### Poids CSS réel mesuré (avant/après, `npm run build`, chunk partagé Bulma + FontAwesome)
+
+| | Brut | Gzip |
+|---|---|---|
+| Bulma 0.9.0 (baseline, mesurée dans un worktree isolé sur le commit `b3b46cf`) | 194,33 kB | 26,06 kB |
+| Bulma 1.0.4 | 676,13 kB | 65,79 kB |
+
+Ratio ×2,52 en gzip — cohérent avec l'estimation initiale (« ~2,5×, 26K → 66K ») qui avait motivé
+la décision d'assumer le coût sans compensation. Le chunk s'appelle toujours
+`free-solid-svg-icons.css` (nom hérité du hash Rolldown, trompeur — contient en fait Bulma +
+FontAwesome + CSS léger des layouts, confirmé par grep, cf. IMP-005).
+
+### Classes cassées et corrections
+
+**Cassées (suppression confirmée par diff direct des deux `bulma.css` installés) :**
+- `is-marginless` → remplacée par `m-0`
+- `is-paddingless` → remplacée par `p-0`
+
+Usages corrigés : `src/client/layouts/presenter/presenter.html` (lignes 16, 17, 23, 34) et
+`src/client/layouts/on-stage/on-stage.html` (lignes 16, 17). `m-0`/`p-0` appliquent le même
+`margin: 0 !important` / `padding: 0 !important` que les anciens helpers — remplacement
+sémantiquement équivalent, pas de changement de rendu.
+
+**Signalée, non corrigée (hors scope) :** `is-margin-less` (avec un tiret, `presenter.html:34`,
+à côté de `is-paddingless`) n'a jamais existé dans Bulma, ni en 0.9 ni en 1.0 — coquille
+préexistante et inerte dans les deux versions. Conservée telle quelle : ce n'est pas une
+régression de cette étape et sa correction n'a pas été demandée.
+
+**Reste du parc audité (~60 classes utilisées dans les 13 composants + layouts, vérifiées par
+grep direct sur `node_modules/bulma/css/bulma.css` réellement installé après le bump, pas sur la
+liste supposée) :** aucune autre casse. Seul point à noter : `dropdown-trigger` n'a aucune règle
+CSS propre dans le fichier (ni en 0.9, confirmé absent également) — c'est un conteneur purement
+structurel de la doc Bulma, jamais stylé dans aucune version ; son absence de règle CSS n'est donc
+pas une régression.
+
+### Vérification visuelle manuelle (Playwright + serveur dev réel, pas de snapshot automatisé)
+Écrans vérifiés sans régression : formulaire URL (normal + état d'erreur `is-danger`/`delete`),
+écran de choix de vue (`card`/`is-one-fifth`), on-stage (dropdown Navigation, dropdown Plugins
+`is-right`, activation touch-pointer), presenter (colonnes `is-three-fifths`/`has-background-white`,
+timer, notes `message is-light`).
+
+### Conséquences
+- Aucune régression fonctionnelle : `tsc`, lint, 380 tests unitaires, 27 tests composants,
+  35 tests e2e, audit 0.
+- Poids CSS gzippé du chunk partagé Bulma/FontAwesome quasiment ×2,5 (26K → 66K), assumé sans
+  compensation par décision explicite — pas de sous-ensemble Sass personnalisé.
+
+---
+
 ## IMP-006 — Migration lit-element → lit + décorateurs
 
 **Étape :** 10 | **Statut :** ⬜

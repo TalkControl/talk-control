@@ -76,7 +76,7 @@ Garde-fous quel que soit le modèle : exécuter réellement les 6 commandes de v
 | [06 — Upgrades groupées + Vite 8](step-06-deps-vite8.md) | ✅ | Vite 5→8 (Rolldown, audit 0), VitePress 2-alpha, exit `vite-tsconfig-paths` (alias partagés `vite.aliases.ts`), fin de `--legacy-peer-deps` |
 | [07 — ESLint 10 + preset TS](step-07-eslint10.md) | ✅ | ESLint 10, `tseslint.configs.recommended`, purge des règles redondantes Prettier |
 | [08 — CSS partagé](step-08-shared-css.md) | ✅ | Dédupliquer Bulma des 13 shadow roots via `adoptedStyleSheets` |
-| [09 — Bulma 1.x](step-09-bulma1.md) | ⬜ | Upgrade 0.9 → 1.0.4 (une seule source à migrer grâce à 08) |
+| [09 — Bulma 1.x](step-09-bulma1.md) | ✅ | Upgrade 0.9 → 1.0.4, CSS gzip 26K → 66K assumé (IMP-005b) |
 
 ### Phase D — Modernisation du code
 
