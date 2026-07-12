@@ -1,8 +1,10 @@
 import { defineConfig } from 'vitest/config';
-import tsconfigPaths from 'vite-tsconfig-paths';
+import { tsconfigAliases } from './vite.aliases';
 
 export default defineConfig({
-    plugins: [tsconfigPaths()],
+    resolve: {
+        alias: tsconfigAliases
+    },
     test: {
         globals: true,
         environment: 'jsdom',

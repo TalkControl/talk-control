@@ -1,9 +1,10 @@
 import { defineConfig } from 'vitest/config';
 import { playwright } from '@vitest/browser-playwright';
+import { tsconfigAliases } from './vite.aliases';
 
 export default defineConfig({
     resolve: {
-        tsconfigPaths: true
+        alias: tsconfigAliases
     },
     test: {
         browser: {

@@ -141,14 +141,40 @@ avant commit disparaît. Migration d'un token local existant : aucun (le `config
 
 ## IMP-004 — Stratégie d'upgrade groupée (Vite 8)
 
-**Étape :** 06 | **Statut :** ⬜
+**Étape :** 06 | **Statut :** ✅ Implémenté (branche `chore/step-06-deps-vite8`, 2026-07-12)
 
 ### Contexte
 Vite 5 (vuln esbuild), 3 majeures de retard, `--legacy-peer-deps` masquant un conflit.
 
-### Décision (à confirmer)
-Upgrades groupées par chaîne de résolution (vite/vitest/vitepress), traversée des majeures une par une,
-fin de `--legacy-peer-deps`. ESLint traité à part (IMP-005 étape 07).
+### Décision
+- **Groupement retenu** : un commit par sous-groupe de chaîne de résolution, pour isoler les régressions
+  au bisect — (1) patch/minor Vitest et outillage, (2) Vite 6, (3) Vite 7, (4) Vite 8, (5) VitePress 2,
+  (6) petites majeures indépendantes (supertest 7, query-selector-shadow-dom 1.0), (7) retrait du flag CI.
+  Traversée des majeures Vite **une par une** avec validation complète entre chaque (le point de casse —
+  mode browser Vitest — est apparu dès la 6, pas à la 8 : le découpage a payé).
+- **Conflit de peers identifié** (la cause historique de `--legacy-peer-deps`) : vitest 4.x déclare
+  `vite ^6||^7||^8` en peer **non optionnel**, incompatible avec vite 5.4. Résolu à la racine par la montée
+  de Vite ; `npm ci` et `npm install` (résolution fraîche) passent sans flag, retiré des 7 jobs de
+  `develop.yml`.
+- **Sort de `vite-tsconfig-paths` : supprimé.** Vite 6 casse la résolution des paths tsconfig en mode
+  browser Vitest (l'option native `resolve.tsconfigPaths` n'est pas appliquée au transform client →
+  `@compat/*` introuvable). Solution cible du fichier d'étape appliquée : alias déclarés en dur dans
+  `vite.aliases.ts` (source unique, miroir de `compilerOptions.paths`), partagés par les trois configs
+  (`vite.config.mts`, `vitest.config.ts`, `vitest.browser.config.ts`). Une dep en moins, résolution
+  déterministe à travers les majeures.
+- **VitePress 2.0.0-alpha.18 assumée** : seule ligne compatible Vite 8 (dépend de `vite ^8.1.3`, dédupliqué),
+  la 1.6.4 « latest » porte le vite 5.4/esbuild vulnérable. Outil de docs dev-only, hors runtime applicatif.
+  À re-bumper vers la 2.0.0 stable quand elle sort.
+- **Vulnérabilités résiduelles : aucune.** `npm audit` : 3 (2 moderate + 1 high, chaîne esbuild ≤0.24.2
+  via vite→vitepress) → **0**.
+
+### Conséquences
+Vite 8 = Rolldown/Oxc : `build.rollupOptions` (multi-entrées, `[name].bundle.js`) accepté tel quel, build
+~2× plus rapide (~90-340 ms). Les deux acquis post-audit de `vite.config.mts` sont intacts et re-vérifiés
+au smoke manuel par les clics UI : query `?s=` préservée par `devUrlRewrite` (IMP-002) et `server.cors.origin`
+en fonction toujours honoré par Vite 8 (ACAO reflété pour l'allowlist, absent pour une origine inconnue,
+IMP-003). `jsdoc:build` génère toujours 0 fichier (préexistant → étape 16). ESLint 10 reste pour l'étape 07 ;
+redux/bulma/lit-element intacts (étapes 08-12).
 
 ---
 

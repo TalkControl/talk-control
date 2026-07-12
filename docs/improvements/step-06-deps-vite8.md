@@ -58,6 +58,32 @@ npm run docs:build        # ou noté comme dépendant de l'étape 16
 ```
 Plus la validation systématique complète.
 
+## Résultats de validation (2026-07-12, branche `chore/step-06-deps-vite8`)
+
+**7 commits, un par sous-groupe** : 263a920 (Vitest patch/minor), 13de934 (Vite 6 + exit
+vite-tsconfig-paths), 8535f66 (Vite 7), 88e93e4 (Vite 8), 5d83008 (VitePress 2), 7f45b66
+(supertest 7 + query-selector-shadow-dom 1.0), 9e25119 (CI sans flag).
+
+| Vérification | Résultat |
+|---|---|
+| `npx tsc --noEmit` | ✅ à chaque commit |
+| `npm run lint` | ✅ à chaque commit |
+| `NODE_ENV=test npm test` | ✅ 380/380 à chaque commit |
+| `npm run test:components` (canari browser) | ✅ 27/27 à chaque majeure Vite traversée |
+| `npm run test:e2e` | ✅ 35/35 à chaque commit (1 flake 15-remote-control au 1er run, 3 runs verts ensuite, préexistant) |
+| `npm run build` | ✅ — Rolldown, ~90-340 ms (~2× plus rapide), dist identique (HTML plats + `[name].bundle.js`) |
+| `npm ci` **sans** `--legacy-peer-deps` | ✅ — conflit racine = vitest 4 (peer `vite ^6\|\|^7\|\|^8`) vs vite 5.4, résolu par Vite 8 ; flag retiré des 7 jobs |
+| `npm audit` | ✅ **3 → 0 vulnérabilités** (chaîne esbuild purgée par Vite 8 + VitePress 2) |
+| `npm run docs:build` | ✅ VitePress 2.0.0-alpha.18 (0.92 s) — `jsdoc:build` génère toujours 0 fichier (préexistant → étape 16) |
+| Smoke manuel (clics UI) | ✅ index → Validate → Stage + Presenter en 2 onglets, navigation synchronisée, `?s=` préservé par devUrlRewrite puis strip (IMP-002), CORS dynamique honoré par Vite 8 (ACAO allowlist, rien pour origine inconnue) (IMP-003) |
+
+**Écarts vs plan initial** :
+- `vite-tsconfig-paths` supprimé dès Vite 6 (pas à la 8) : l'option native `resolve.tsconfigPaths` de
+  Vitest cassait en mode browser sous Vite 6 → alias en dur partagés via `vite.aliases.ts` (les trois
+  configs), miroir manuel de `tsconfig.json` paths.
+- VitePress 2 n'existe qu'en **alpha** (2.0.0-alpha.18, dist-tag `next`) — assumée : seule ligne
+  compatible Vite 8, dev-only. Re-bump vers la stable quand elle sort.
+
 ## Risques & pièges
 
 - Vite 6→7→8 a introduit des breaking changes sur les defaults (`build.target`, résolution CJS, environnement
