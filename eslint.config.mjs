@@ -6,12 +6,11 @@ import prettierPlugin from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
 import tseslint from 'typescript-eslint';
 
-export default [
+export default tseslint.config(
     {
         ignores: ['node_modules/', 'dist/', 'showcase/', 'docs-dist/', 'docs-sources/', '.claude/']
     },
     js.configs.recommended,
-    jsdocPlugin.configs['flat/recommended'],
     prettierConfig,
     {
         plugins: {
@@ -28,12 +27,7 @@ export default [
         rules: {
             'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
             'no-console': 'off',
-            indent: ['error', 4, { SwitchCase: 1 }],
-            'linebreak-style': ['error', 'unix'],
-            quotes: ['error', 'single', 'avoid-escape'],
-            semi: ['error', 'always'],
-            'prettier/prettier': ['error'],
-            'jsdoc/tag-lines': 'off'
+            'prettier/prettier': ['error']
         }
     },
     {
@@ -50,11 +44,8 @@ export default [
     },
     {
         files: ['**/*.ts'],
-        plugins: {
-            '@typescript-eslint': tseslint.plugin
-        },
+        extends: [...tseslint.configs.recommended],
         languageOptions: {
-            parser: tseslint.parser,
             globals: {
                 ...globals.node,
                 ...globals.browser
@@ -63,13 +54,23 @@ export default [
         rules: {
             'no-unused-vars': 'off',
             'no-undef': 'off',
-            '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-            'jsdoc/require-param': 'off',
-            'jsdoc/require-param-type': 'off',
-            'jsdoc/require-returns': 'off',
-            'jsdoc/require-returns-type': 'off',
-            'jsdoc/require-property-description': 'off',
-            'jsdoc/require-jsdoc': 'off'
+            '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
+        }
+    },
+    {
+        // Mocks/stubs across the suite lean on `any` for flexibility; enforcing precise
+        // types here fights the testing style rather than catching real bugs (~118 sites).
+        files: ['test/**/*.ts'],
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off'
+        }
+    },
+    {
+        files: ['scripts/**/*.mjs'],
+        ...jsdocPlugin.configs['flat/recommended'],
+        rules: {
+            ...jsdocPlugin.configs['flat/recommended'].rules,
+            'jsdoc/tag-lines': 'off'
         }
     }
-];
+);

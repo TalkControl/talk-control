@@ -7,6 +7,7 @@ describe('RevealEngineClient', function () {
         window.Reveal = {
             getCurrentSlide: vi.fn(),
             configure: vi.fn(),
+            getSlideNotes: vi.fn(),
             next: vi.fn(),
             up: vi.fn(),
             down: vi.fn(),
