@@ -1,37 +1,22 @@
+import { customElement, property, query } from 'lit/decorators.js';
 import { html, css, PropertyValues } from 'lit';
 import { TouchPointerMaskTCComponent } from './touch-pointer-mask-tc-component';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 
-class TouchPointerMaskComponent extends TcStyledElement {
-    // `declare` (not plain class fields) is required here: with this project's ES2022
-    // target, useDefineForClassFields shadows Lit's reactive property accessors and
-    // silently breaks rendering entirely (see slide-view.ts for the same pattern).
-    declare pointer: { x: string | number; y: string | number; color: string };
-    declare touchPointerMaskTCComponent: TouchPointerMaskTCComponent;
+@customElement('tc-touch-pointer-mask')
+export class TouchPointerMaskComponent extends TcStyledElement {
+    @property({ type: Object }) pointer: { x: string | number; y: string | number; color: string } = { x: 0, y: 0, color: '#FF00000' };
+    @property({ type: Object }) touchPointerMaskTCComponent!: TouchPointerMaskTCComponent;
 
-    constructor() {
-        super();
-        this.pointer = { x: 0, y: 0, color: '#FF00000' };
-    }
+    @query('#touchMask') touchMask!: HTMLElement;
 
-    static get styles() {
-        return [
-            css`
-                #touchMask {
-                    width: 100%;
-                    height: 100%;
-                    border: 4px solid red;
-                }
-            `
-        ];
-    }
-
-    static get properties() {
-        return {
-            pointer: { type: Object },
-            touchPointerMaskTCComponent: { type: Object }
-        };
-    }
+    static styles = css`
+        #touchMask {
+            width: 100%;
+            height: 100%;
+            border: 4px solid red;
+        }
+    `;
 
     override firstUpdated(_changedProperties: PropertyValues): void {
         super.firstUpdated(_changedProperties);
@@ -45,7 +30,7 @@ class TouchPointerMaskComponent extends TcStyledElement {
     }
 
     _initPointerDblClick(): void {
-        this.shadowRoot!.getElementById('touchMask')!.addEventListener('click', () =>
+        this.touchMask.addEventListener('click', () =>
             this.touchPointerMaskTCComponent.sendPointerEventToController({
                 origin: 'touchPointer',
                 type: 'pointerClick',
@@ -55,7 +40,7 @@ class TouchPointerMaskComponent extends TcStyledElement {
     }
 
     _initPointerMove(): void {
-        const touchMask = this.shadowRoot!.getElementById('touchMask') as HTMLElement;
+        const touchMask = this.touchMask;
         const movePointer = (x: number, y: number) => {
             this.pointer.x = `${this._getPositionInPercent(x, touchMask.offsetWidth)}%`;
             this.pointer.y = `${this._getPositionInPercent(y, touchMask.offsetHeight)}%`;
@@ -85,5 +70,3 @@ class TouchPointerMaskComponent extends TcStyledElement {
         return Math.round((value * 100) / size);
     }
 }
-
-customElements.define('tc-touch-pointer-mask', TouchPointerMaskComponent);
