@@ -1,6 +1,7 @@
 import { customElement, query } from 'lit/decorators.js';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 import { html } from 'lit';
+import { formatTime } from '@client/web-components/shared/format-time';
 
 @customElement('tc-clock')
 export class ClockComponent extends TcStyledElement {
@@ -10,16 +11,12 @@ export class ClockComponent extends TcStyledElement {
         this.startClock();
     }
 
-    formatTime(time: number): string | number {
-        return time ? (time < 10 ? '0' + time : time) : '00';
-    }
-
     startClock(): void {
         const updateTime = () => {
             const today = new Date();
             const hours = today.getHours();
             const minutes = today.getMinutes();
-            this.clock.textContent = `${this.formatTime(hours)}:${this.formatTime(minutes)}`;
+            this.clock.textContent = `${formatTime(hours)}:${formatTime(minutes)}`;
         };
         updateTime();
         setInterval(updateTime, 1000);

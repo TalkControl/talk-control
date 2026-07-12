@@ -2,6 +2,7 @@ import { customElement, query } from 'lit/decorators.js';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 import { html, css } from 'lit';
 import { TimerTCComponent } from './timer-tc-component';
+import { formatTime as sharedFormatTime } from '@client/web-components/shared/format-time';
 
 @customElement('tc-timer')
 export class TimerComponent extends TcStyledElement {
@@ -20,7 +21,7 @@ export class TimerComponent extends TcStyledElement {
     }
 
     formatTime(time: number): string | number {
-        return time ? (time < 10 ? '0' + time : time) : '00';
+        return sharedFormatTime(time);
     }
 
     startTimer(): () => void {
