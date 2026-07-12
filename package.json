@@ -95,7 +95,7 @@
         "@fortawesome/fontawesome-svg-core": "^7.3.0",
         "@fortawesome/free-solid-svg-icons": "^7.3.0",
         "@ngrok/ngrok": "^1.7.0",
-        "bulma": "^0.9.0",
+        "bulma": "^1.0.4",
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.6",
         "express": "^5.2.1",
