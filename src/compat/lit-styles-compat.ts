@@ -31,7 +31,7 @@ faSheet.replaceSync(faCss);
  * Classe de base des web components qui ont besoin de Bulma (et, en option,
  * des styles FontAwesome) dans leur shadow root : ils étendent `TcStyledElement`
  * au lieu de `LitElement`, et n'incluent plus `bulmaStyles`/`faStyles` dans
- * `static get styles()` (uniquement leur CSS propre).
+ * `static styles` (uniquement leur CSS propre).
  */
 export abstract class TcStyledElement extends LitElement {
     protected static readonly sharedStyleSheets: CSSStyleSheet[] = [bulmaSheet];
