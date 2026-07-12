@@ -3,6 +3,8 @@ import { eventBusLogger } from '@event-bus/event-bus-logger';
 import { Server, Socket } from 'socket.io';
 import type { Server as HttpServer } from 'http';
 import { isValidSessionId, sessionRoom } from '@services/session';
+import { config } from '@services/config';
+import { buildCorsOptions } from '@services/cors';
 
 export class EventBusWebsocketsServer extends EventBus {
     sockets: Socket[] = [];
@@ -15,7 +17,8 @@ export class EventBusWebsocketsServer extends EventBus {
 
     constructor(server: HttpServer) {
         super();
-        this.io = new Server(server, { cors: { origin: '*' } });
+        // Même allowlist que l'Express (IMP-003), cohérente avec l'auth par session
+        this.io = new Server(server, { cors: buildCorsOptions(config) });
         this.io.use(this.sessionMiddleware);
         this.io.on('connection', (socket: Socket) => {
             eventBusLogger.log('### connected', {

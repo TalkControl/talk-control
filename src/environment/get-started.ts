@@ -29,7 +29,8 @@ if (config.tcController.urls.external) {
             `    TalkControl use ngrok to be accessible remotely:
         1. Create an account and login on https://ngrok.com/
         2. Get your auth token on page https://dashboard.ngrok.com/auth
-        3. Add your auth token to file: config/config.json
+        3. Export it as an env variable: NGROK_AUTHTOKEN=<token>
+           (or add it to config/config.json — gitignored, never commit a token)
         4. Quit and restart TalkControl with npm start`
         )
     );

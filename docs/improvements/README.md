@@ -67,7 +67,7 @@ Garde-fous quel que soit le modèle : exécuter réellement les 6 commandes de v
 |---|---|---|
 | [03 — Anti-SSRF](step-03-ssrf.md) | ✅ | Validation des cibles patcher/proxy, cookie signé + flags |
 | [04 — Pairing socket.io](step-04-socket-auth.md) | ✅ | Token de session (`?s=<uuid>`, « le secret est l'id »), middleware `io.use`, broadcast par room |
-| [05 — Secrets & CORS](step-05-secrets-cors.md) | ⬜ | Config runtime hors git, token ngrok en env, CORS resserré |
+| [05 — Secrets & CORS](step-05-secrets-cors.md) | ✅ | `config.json` gitignored + example versionné + postinstall, `NGROK_AUTHTOKEN` prioritaire, CORS allowlist sur les 3 surfaces |
 
 ### Phase C — Dépendances & build
 

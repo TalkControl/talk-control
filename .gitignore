@@ -67,3 +67,7 @@ docs-sources/.vitepress/cache/
 test-results/
 .vitest-attachments/
 test/**/__screenshots__/
+
+# Local config: may carry the ngrok token and is rewritten at runtime with
+# tunnel urls — recreated from config/config.example.json by npm install
+config/config.json

@@ -4,6 +4,7 @@ import { resolve, relative, join, dirname, basename } from 'path';
 import { existsSync, readdirSync, readFileSync, writeFileSync, rmSync } from 'fs';
 import { fileURLToPath } from 'url';
 import type { Plugin } from 'vite';
+import { buildAllowedOrigins } from './src/common/services/cors';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -125,9 +126,19 @@ export default defineConfig({
     },
     server: {
         port: 3000,
+        // Allowlist au lieu de 'Access-Control-Allow-Origin: *' (IMP-003). Nécessaire
+        // pour l'iframe patchée (:3001 ou tunnel tcServer) qui charge
+        // tc-component.bundle.js depuis ce serveur en module script (requête CORS).
+        // config.json est relu à chaque handshake : les URLs ngrok y sont écrites
+        // par create-tunnels APRÈS le démarrage de Vite.
+        cors: {
+            origin(requestOrigin, callback) {
+                const config = JSON.parse(readFileSync(resolve(__dirname, 'config/config.json'), 'utf-8'));
+                callback(null, buildAllowedOrigins(config));
+            }
+        },
         headers: {
-            'Cross-Origin-Resource-Policy': 'cross-origin',
-            'Access-Control-Allow-Origin': '*'
+            'Cross-Origin-Resource-Policy': 'cross-origin'
         }
     }
 });

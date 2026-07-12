@@ -29,6 +29,26 @@ The app starts three services in parallel:
 | Server     | 3001 | Express 5 WebSocket server                 |
 | Showcase   | 3002 | Static file server for the presentation    |
 
+## Configuration
+
+`config/config.json` is **gitignored**: it may carry your ngrok token and is rewritten at
+runtime with the tunnel urls. It is created automatically from
+[`config/config.example.json`](config/config.example.json) by `npm install` — never commit it.
+
+### Remote access (ngrok)
+
+To control a presentation from another device, TalkControl opens ngrok tunnels at startup:
+
+```bash
+NGROK_AUTHTOKEN=<your-token> npm start
+```
+
+The `NGROK_AUTHTOKEN` env variable takes precedence over `ngrok.authToken` in
+`config/config.json`. Get a token at https://dashboard.ngrok.com/auth.
+
+Cross-origin requests are restricted to the origins declared in `config/config.json`
+(local urls of the three services plus the ngrok urls written at runtime).
+
 ## Development
 
 ```bash
