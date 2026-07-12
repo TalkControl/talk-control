@@ -1,11 +1,10 @@
-import { bulmaStyles } from '@compat/lit-styles-compat';
-import { LitElement, html, css } from 'lit-element';
+import { TcStyledElement } from '@compat/lit-styles-compat';
+import { html, css } from 'lit-element';
 import presentationService from '@services/presentation';
 
-class MagicModeTutorialComponent extends LitElement {
+class MagicModeTutorialComponent extends TcStyledElement {
     static get styles() {
         return [
-            bulmaStyles,
             css`
                 .content {
                     position: relative;

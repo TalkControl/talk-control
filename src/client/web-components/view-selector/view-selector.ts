@@ -1,17 +1,13 @@
-import { bulmaStyles, faStyles } from '@compat/lit-styles-compat';
-import { LitElement, html } from 'lit-element';
+import { TcStyledWithFaElement } from '@compat/lit-styles-compat';
+import { html } from 'lit-element';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faChalkboard, faChalkboardTeacher } from '@fortawesome/free-solid-svg-icons';
 import { getOrCreateSessionId, withSessionId } from '@services/session';
 
-class ViewSelectorComponent extends LitElement {
+class ViewSelectorComponent extends TcStyledWithFaElement {
     static get properties() {
         return {};
-    }
-
-    static get styles() {
-        return [bulmaStyles, faStyles];
     }
 
     render() {

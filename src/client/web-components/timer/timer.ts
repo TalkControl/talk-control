@@ -1,14 +1,13 @@
-import { bulmaStyles } from '@compat/lit-styles-compat';
-import { LitElement, html, css } from 'lit-element';
+import { TcStyledElement } from '@compat/lit-styles-compat';
+import { html, css } from 'lit-element';
 import { TimerTCComponent } from './timer-tc-component';
 
-class TimerComponent extends LitElement {
+class TimerComponent extends TcStyledElement {
     timerElement!: Element;
     restartTimer: () => void = () => undefined;
 
     static get styles() {
         return [
-            bulmaStyles,
             css`
                 #timer {
                     cursor: pointer;

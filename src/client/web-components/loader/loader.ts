@@ -1,11 +1,10 @@
-import { bulmaStyles } from '@compat/lit-styles-compat';
-import { LitElement, html, css } from 'lit-element';
+import { TcStyledElement } from '@compat/lit-styles-compat';
+import { html, css } from 'lit-element';
 import { TCComponentLoaderComponent } from '@client/web-components/loader/loader-tc-component';
 
-class LoaderComponent extends LitElement {
+class LoaderComponent extends TcStyledElement {
     static get styles() {
         return [
-            bulmaStyles,
             css`
                 :host {
                 }

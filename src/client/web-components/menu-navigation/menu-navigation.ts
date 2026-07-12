@@ -1,16 +1,12 @@
-import { bulmaStyles, faStyles } from '@compat/lit-styles-compat';
-import { LitElement, html } from 'lit-element';
+import { TcStyledWithFaElement } from '@compat/lit-styles-compat';
+import { html } from 'lit-element';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faBars, faHome, faDesktop, faChalkboardTeacher, faMobileAlt } from '@fortawesome/free-solid-svg-icons';
 
-class MenuNavigationComponent extends LitElement {
+class MenuNavigationComponent extends TcStyledWithFaElement {
     static get properties() {
         return {};
-    }
-
-    static get styles() {
-        return [bulmaStyles, faStyles];
     }
 
     firstUpdated(): void {

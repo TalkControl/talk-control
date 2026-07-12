@@ -1,11 +1,11 @@
 import { MenuPluginsTCComponent } from './menu-plugins-tc-component';
-import { bulmaStyles, faStyles } from '@compat/lit-styles-compat';
-import { LitElement, html, css } from 'lit-element';
+import { TcStyledWithFaElement } from '@compat/lit-styles-compat';
+import { html, css } from 'lit-element';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faCube } from '@fortawesome/free-solid-svg-icons';
 
-class MenuPluginsComponent extends LitElement {
+class MenuPluginsComponent extends TcStyledWithFaElement {
     menuPluginsTcComponent!: MenuPluginsTCComponent;
     itemTitle: string = '';
 
@@ -15,8 +15,6 @@ class MenuPluginsComponent extends LitElement {
 
     static get styles() {
         return [
-            bulmaStyles,
-            faStyles,
             css`
                 #closeButton {
                     display: none;
