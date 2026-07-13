@@ -71,7 +71,7 @@ describe('EventBusWebsocketsServer — sessions (intégration socket.io)', funct
 
     it('should broadcast only to sockets of the same session', async function () {
         // Given — le serveur relaie inputEvent → gotoSlide via onMultiple, comme TCServer
-        bus.onMultiple('inputEvent', input => bus.broadcast('gotoSlide', input));
+        bus.onMultiple('inputEvent', () => bus.broadcast('gotoSlide', { slide: { h: 0, v: 0, f: -1, fMax: -1 } }));
         const emitterA = connect({ sessionId: SESSION_A });
         const receiverA = connect({ sessionId: SESSION_A });
         const outsiderB = connect({ sessionId: SESSION_B });
@@ -87,7 +87,7 @@ describe('EventBusWebsocketsServer — sessions (intégration socket.io)', funct
         // Then — l'autre client de la session A reçoit, la session B jamais
         await vi.waitFor(() => expect(received.a).toHaveLength(1));
         await new Promise(resolve => setTimeout(resolve, 200));
-        expect(received.a).toEqual([{ key: 'arrow' }]);
+        expect(received.a).toEqual([{ slide: { h: 0, v: 0, f: -1, fMax: -1 } }]);
         expect(received.b).toHaveLength(0);
     });
 });

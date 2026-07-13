@@ -343,11 +343,80 @@ touch-pointer ne stockent aucun host, et `TCComponent` a un constructeur structu
 
 ## IMP-007 — Event-bus typé (TcEventMap)
 
-**Étape :** 11 | **Statut :** ⬜
+**Étape :** 11 | **Statut :** ✅
 
-### Décision (à confirmer)
-Event map TypeScript, `on`/`broadcast` génériques, suppression des ~30 casts. `unknown` assumé et documenté
-pour les seuls events plugin pass-through.
+### Décision
+`TcEventMap` (`src/common/event-bus/events.ts`) recense les 21 événements métier réels (23 noms
+grep moins `connection`/`disconnect`, natifs socket.io hors périmètre). `Slide` et `PluginDescriptor`
+extraits en types nommés partagés (`src/common/event-bus/slide.ts`, `plugin-descriptor.ts`), réutilisés
+par le store serveur et les engines client (l'ex-`ClientSlide` de `revealjs-client-engine.ts` fusionné
+avec `Slide`, `GenericEngine.getSlides()` retypé `Slide[]` au lieu de `unknown[]`).
+
+`on`/`broadcast`/`emitTo` sont génériques via un type conditionnel unique `PayloadFor<K> = K extends
+TcEventName ? TcEventMap[K] : unknown`, **pas des surcharges**. Piège constaté en test manuel : avec
+deux surcharges (`on<K extends TcEventName>(...)` puis un fallback `on(key: string, ...)`), TS retombe
+silencieusement sur le fallback dès qu'un payload ne correspond pas au type attendu — `broadcast
+('gotoSlide', { wrong: 1 })` compilait sans erreur. Le type conditionnel à signature unique n'a pas ce
+problème : la même injection est bien rejetée (`Object literal may only specify known properties`),
+confirmé avant/après par test manuel (voir step-11, section validation).
+
+### Divergences avec le plan initial (map déduite du code réel, pas de l'exemple du step)
+- **`init` a deux usages distincts** sur les deux canaux : simple trigger sans payload côté composant
+  (`EventBusComponent.on('init', ...)`, ignoré), et `{ slides: Slide[] }` côté serveur (relais de
+  `initialized`, consommé par `TCServer` puis l'engine). D'où `TcEventMap['init'] = { slides: Slide[] }
+  | undefined`, pas `{ slides; currentSlide }` comme suggéré par le step (jamais vrai à l'émission —
+  `currentSlide` est ajouté par l'engine après coup, pas transporté par le bus).
+- **`gotoSlide` = `{ slide: Partial<Slide> }`**, pas `{ currentSlide: Slide }`.
+- **`pluginEventIn`/`pluginEventOut` restent `unknown`** (pass-through plugin, comme prévu par le plan).
+  `sendNotesToComponent`/`sendNotesToController` aussi : le format des notes dépend de l'engine
+  (`getSlideNotes()` non typé ailleurs dans le code), pas sur-typé pour ne pas fabriquer un contrat qui
+  n'existe pas.
+- **`deactivatePlugin` et `touchPointer` n'ont aujourd'hui aucun émetteur** (`on` enregistré, jamais
+  `broadcast` — câblage mort pré-existant, hors scope de correction). Payload `undefined`, cohérent avec
+  leurs handlers actuels qui ignorent l'argument.
+
+### Casts de consommation : 12 supprimés, pas éliminés à 100 % (compte réel, pas le "~30" du step)
+Recensement initial (JF, revérifié) : 19 casts `data as {...}` liés au bus. Revérification effective à
+l'exécution de l'étape :
+- **10 supprimés** aux points de consommation devenus inutiles grâce au typage : `tc-component.ts` (2,
+  gotoSlide/activatePlugin), `slide-view-tc-component.ts` (1), `menu-plugins-tc-component.ts` (1),
+  `tc-controller.ts` (3 sur 4 — pluginsList/pluginStartingOut/pluginEndingOut), `tc-server.ts` (1,
+  inputEvent — pas listé par le recensement initial, trouvé en revérifiant), `event-bus-postmessage.ts`
+  (2, redondants : `message.data` est déjà `any` côté DOM, le cast vers `string`/`{data:unknown}` n'avait
+  jamais d'effet).
+- **1 gardé volontairement** : `tc-controller.ts` (pluginEventOut → extraction de `.origin` comme clé de
+  routage dynamique). Inhérent au pass-through non sur-typé — pas un oubli.
+- **2 gardés volontairement** : `server/store/index.ts:28,32` (reducer Redux). Diffèrent la
+  discrimination stricte à l'étape 12 (store minimal) plutôt que de retyper les créateurs d'actions ici,
+  ce qui aurait cascadé jusqu'à `revealjs-server-engine.ts:7` (spread de `params: unknown`) — hors
+  scope de cette étape (contrainte explicite : ne pas élargir vers Redux).
+- **1 hors scope, jamais compté** : `touch-pointer/index.ts:134` — écoute native `addEventListener
+  ('message', ...)`, ne passe pas par `EventBus.on()`, donc pas un cast de payload de bus.
+- Séparément, le `as unknown as string` de `event-bus-resolver.ts:34` (branche client) est remplacé par
+  une garde `isServerUrl(server): server is string`, sans cast — la branche serveur garde son
+  `as HttpServer` (cast direct valide vers un membre de l'union, jamais signalé comme problème).
+
+**7 nouveaux casts internes introduits**, à la frontière plomberie/API publique : 2 dans `event-bus.ts`
+(stockage interne `callBacks: EventCallback[]` non générique — le pont entre la surface publique
+générique et le stockage `unknown` uniforme), 2 dans `event-bus-websockets-client.ts` et 3 dans
+`event-bus-websockets-server.ts` (l'appel à un `K` encore ouvert dans une autre fonction générique —
+celle de `socket.io`/`socket.io-client` — ne s'unifie pas ; le contournement classique est de figer `K`
+en `string`/`EventCallback` concret juste avant l'appel). Ce ne sont pas des casts de payload métier :
+documentés inline, ils marquent la frontière entre notre typage et celui de socket.io.
+
+**Bilan net sur les fichiers touchés (hors bruit de commentaires) :** 25 → 20 casts (`git diff
+develop -- src/`, casts hors lignes de commentaire). Sur l'ensemble de `src/` (`grep -rn " as " src/ |
+wc -l`, inclut du bruit de commentaires JSDoc pré-existant sans rapport) : 45 → 41.
+
+### Conséquences
+- `tsc --noEmit` 0 erreur, et rejette bien un payload incorrect pour un event connu (testé manuellement,
+  annulé après vérification — voir step-11).
+- Aucune régression : lint, 380 tests unitaires, 27 tests composants, 35 tests e2e, build, audit 0.
+  3 tests ajustés dans leurs mocks (types, pas logique) : `tc-controller.spec.ts` et
+  `event-bus-websockets-server.spec.ts` utilisaient `{ slide: <nombre> }` comme trace passe-plat pour
+  `gotoSlide` — remplacé par un objet `Slide` réaliste ; le test d'intégration session
+  (`event-bus-websockets-session.integration.spec.ts`) forwardait `inputEvent` tel quel vers `gotoSlide`
+  (jamais vrai en pratique, `TCServer` passe toujours par l'engine) — payload de simulation corrigé.
 
 ---
 

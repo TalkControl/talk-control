@@ -116,7 +116,7 @@ describe('TCController', function () {
 
         it("should notify components of presentation's slide state change", async function () {
             // Given
-            const data = { slide: 9 };
+            const data = { slide: { h: 0, v: 0, f: 9, fMax: -1 } };
             // When
             serverChannel.broadcast('gotoSlide', data);
             // Then

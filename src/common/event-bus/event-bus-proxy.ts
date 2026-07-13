@@ -1,5 +1,6 @@
 import { EventBus, EventCallback } from './event-bus';
 import { eventBusLogger } from './event-bus-logger';
+import type { PayloadFor } from './events';
 
 export class EventBusProxy extends EventBus {
     name: string;
@@ -11,23 +12,23 @@ export class EventBusProxy extends EventBus {
         this.eventBus = eventBus;
     }
 
-    broadcast(key: string, data?: unknown): void {
+    broadcast<K extends string>(key: K, data?: PayloadFor<K>): void {
         eventBusLogger.log(`BROADCAST "${key}" on channel ${this.name} with: ${data ? JSON.stringify(data) : 'no data'}`);
         this.eventBus.broadcast(key, data);
     }
 
-    emitTo(key: string, data: unknown, target: unknown): void {
+    emitTo<K extends string>(key: K, data: PayloadFor<K>, target: unknown): void {
         const targetId = (target as { id?: string })?.id ?? 'unknown';
         eventBusLogger.log(`EMIT "${key}" on channel ${this.name} to target "${targetId}" with: ${data ? JSON.stringify(data) : 'no data'}`);
         this.eventBus.emitTo(key, data, target);
     }
 
-    onMultiple(key: string, callback: EventCallback): void {
+    onMultiple<K extends string>(key: K, callback: EventCallback<PayloadFor<K>>): void {
         eventBusLogger.log(`SET onMultiple event '${key}' on ${this.name}`);
         this.eventBus.onMultiple(key, callback);
     }
 
-    on(key: string, callback: EventCallback): void {
+    on<K extends string>(key: K, callback: EventCallback<PayloadFor<K>>): void {
         try {
             eventBusLogger.log(`SET on event '${key}' on ${this.name}`);
             this.eventBus.on(key, callback);

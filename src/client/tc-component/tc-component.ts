@@ -29,16 +29,14 @@ export class TCComponent extends EventBusComponent {
         }
 
         const slides = this.engine.getSlides();
-        this.controllerComponentChannel.on('gotoSlide', data => {
-            const { slide } = data as { slide: unknown };
+        this.controllerComponentChannel.on('gotoSlide', ({ slide }) => {
             this.engine.goToSlide(slide, this.delta);
             if (!this.delta) {
                 this.controllerComponentChannel.broadcast('sendNotesToController', this.engine.getSlideNotes());
             }
         });
 
-        this.controllerComponentChannel.on('activatePlugin', data => {
-            const { pluginName } = data as { pluginName: string };
+        this.controllerComponentChannel.on('activatePlugin', ({ pluginName }) => {
             pluginService.activateOnComponent(pluginName, this);
         });
 

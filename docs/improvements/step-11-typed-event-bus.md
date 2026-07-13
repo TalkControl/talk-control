@@ -75,3 +75,36 @@ Compter les casts avant/après : `grep -rn " as " src/ | wc -l` — documenter l
   plugin.
 - Ne pas changer le comportement runtime : cette étape est purement au niveau des types. Les tests doivent
   passer sans modification de leur logique (seulement d'éventuels ajustements de types dans les mocks).
+
+## Résultats de validation
+
+**Décision tracée : [IMP-007](decisions.md#imp-007--event-bus-typé-tceventmap)** — map finale des 21
+événements, divergences vs l'exemple du step (`init`, `gotoSlide`), décompte réel des casts, piège
+overloads-vs-type-conditionnel.
+
+`npx tsc --noEmit` (0 erreur), `npm run lint` (0 erreur), `NODE_ENV=test npm test` (380/380),
+`npm run test:components` (27/27), `npm run test:e2e` (35/35), `npm run build` (OK), `npm audit`
+(0 vulnérabilité) : tous verts.
+
+**Test manuel du typage (fait, annulé après vérification)** : `broadcast('gotoSlide', { wrong: 1 })`
+injecté temporairement dans `tc-controller.ts`.
+- Avec une conception par **surcharges** (`on<K extends TcEventName>(...)` + fallback `on(key: string,
+  ...)`), `tsc` ne rejetait **pas** l'injection — TS retombe silencieusement sur le fallback string dès
+  que le payload ne correspond pas à la surcharge générique. Aucune vérification réelle.
+- Avec un **type conditionnel à signature unique** (`PayloadFor<K> = K extends TcEventName ?
+  TcEventMap[K] : unknown`, pas de surcharge), `tsc` rejette bien : `Object literal may only specify
+  known properties, and 'wrong' does not exist in type '{ slide: Partial<Slide>; }'`. Conception retenue.
+
+**Casts** : 19 recensés (JF) → 12 supprimés aux points de consommation (10 bus + 2 double-cast resolver),
+7 nouveaux casts internes introduits à la frontière avec les types de `socket.io`/`socket.io-client` et le
+stockage interne non générique du bus, 3 gardés volontairement (1 pluginEventOut pass-through, 2 Redux
+différés à l'étape 12). Détail complet et bilan chiffré dans IMP-007 — ne pas se fier au "~30" initial de
+ce document, dépassé.
+
+**Fichiers touchés hors les 5 + resolver prévus** : `server/store/index.ts` (réutilisation du type
+`Slide` partagé, 2 casts reducer conservés et documentés), `client/engines/generic-client-engine.ts` et
+`revealjs-client-engine.ts` (retour `getSlides(): Slide[]` au lieu de `unknown[]`, fusion de l'ex-
+`ClientSlide` local avec `Slide` partagé — nécessaire pour que `initialized` (`{ slides: Slide[] }`) type-
+check sans nouveau cast), `server/tc-server.ts` (cast `inputEvent` supprimé, trouvé en revérifiant le code
+plutôt que le recensement initial qui ne le citait pas). 3 tests ajustés dans leurs mocks (payloads
+`{ slide: <nombre> }` → objets `Slide` réalistes ; détail dans IMP-007).

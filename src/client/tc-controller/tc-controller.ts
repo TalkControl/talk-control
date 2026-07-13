@@ -41,25 +41,26 @@ export class TCController {
 
     private _bindPluginStartStopEvents(): void {
         this.controllerServerChannel.on('pluginsList', data => {
-            for (const plugin of data as Array<{ name: string; autoActivate: boolean }>) {
+            for (const plugin of data) {
                 if (plugin.autoActivate) pluginService.activateOnController(plugin.name, this);
                 else this.controllerComponentChannel.broadcast('addToPluginsMenu', { pluginName: plugin.name });
             }
         });
         this.controllerComponentChannel.on('pluginStartingIn', data => this.controllerServerChannel.broadcast('pluginStartingIn', data));
         this.controllerComponentChannel.on('pluginEndingIn', data => this.controllerServerChannel.broadcast('pluginEndingIn', data));
-        this.controllerServerChannel.on('pluginStartingOut', data => {
-            const { pluginName } = data as { pluginName: string };
+        this.controllerServerChannel.on('pluginStartingOut', ({ pluginName }) => {
             pluginService.activateOnController(pluginName, this);
         });
-        this.controllerServerChannel.on('pluginEndingOut', data => {
-            const { pluginName } = data as { pluginName: string };
+        this.controllerServerChannel.on('pluginEndingOut', ({ pluginName }) => {
             pluginService.deactivateOnController(pluginName);
         });
     }
 
     private _bindPluginEvents(): void {
         this.controllerComponentChannel.on('pluginEventIn', data => this.controllerServerChannel.broadcast('pluginEventIn', data));
+        // pluginEventOut est un pass-through plugin volontairement typé `unknown` (IMP-007) : le
+        // cast est ici inhérent, il extrait la clé de routage dynamique (nom de canal plugin),
+        // pas un payload métier sur-typable.
         this.controllerServerChannel.on('pluginEventOut', data => this.controllerComponentChannel.broadcast((data as { origin: string }).origin, data));
     }
 
