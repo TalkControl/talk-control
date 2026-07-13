@@ -1,20 +1,20 @@
 import '../../../src/client/web-components/menu-plugins/menu-plugins';
+import type { MenuPluginsComponent } from '../../../src/client/web-components/menu-plugins/menu-plugins';
+import { mountComponent, cleanupDom } from '../../helpers/dom';
 
 describe('tc-menu-plugins', () => {
-    let el: HTMLElement;
+    let el: MenuPluginsComponent;
 
     beforeEach(async () => {
-        el = document.createElement('tc-menu-plugins');
-        document.body.appendChild(el);
-        await (el as any).updateComplete;
+        el = await mountComponent<MenuPluginsComponent>('tc-menu-plugins');
     });
 
     afterEach(() => {
-        document.body.innerHTML = '';
+        cleanupDom();
     });
 
     it('addItemToMenu ajoute un item dans la liste', () => {
-        (el as any).addItemToMenu('touchPointerInput');
+        el.addItemToMenu('touchPointerInput');
         const items = el.shadowRoot!.getElementById('pluginsList')!.children;
         expect(items.length).toBe(1);
         expect(items[0].innerHTML).toBe('touchPointerInput');
@@ -24,15 +24,15 @@ describe('tc-menu-plugins', () => {
         // Le serveur rediffuse pluginsList à chaque client qui s'initialise
         // (ex: presenter + on-stage) : addItemToMenu peut donc être appelé
         // plusieurs fois pour le même plugin.
-        (el as any).addItemToMenu('touchPointerInput');
-        (el as any).addItemToMenu('touchPointerInput');
+        el.addItemToMenu('touchPointerInput');
+        el.addItemToMenu('touchPointerInput');
         const items = el.shadowRoot!.getElementById('pluginsList')!.children;
         expect(items.length).toBe(1);
     });
 
     it('deux plugins différents sont tous les deux ajoutés', () => {
-        (el as any).addItemToMenu('touchPointerInput');
-        (el as any).addItemToMenu('otherPlugin');
+        el.addItemToMenu('touchPointerInput');
+        el.addItemToMenu('otherPlugin');
         const items = el.shadowRoot!.getElementById('pluginsList')!.children;
         expect(items.length).toBe(2);
     });

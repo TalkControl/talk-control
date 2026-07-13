@@ -1,16 +1,16 @@
 import '../../../src/client/web-components/url-form/url-form';
+import type { UrlFormComponent } from '../../../src/client/web-components/url-form/url-form';
+import { mountComponent, cleanupDom } from '../../helpers/dom';
 
 describe('tc-url-form', () => {
-    let el: HTMLElement;
+    let el: UrlFormComponent;
 
     beforeEach(async () => {
-        el = document.createElement('tc-url-form');
-        document.body.appendChild(el);
-        await (el as any).updateComplete;
+        el = await mountComponent<UrlFormComponent>('tc-url-form');
     });
 
     afterEach(() => {
-        document.body.innerHTML = '';
+        cleanupDom();
     });
 
     it('a un shadowRoot avec les éléments attendus', () => {

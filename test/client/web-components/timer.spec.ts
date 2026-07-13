@@ -1,28 +1,28 @@
 import '../../../src/client/web-components/timer/timer';
+import type { TimerComponent } from '../../../src/client/web-components/timer/timer';
+import { mountComponent, cleanupDom } from '../../helpers/dom';
 
 describe('tc-timer', () => {
-    let el: HTMLElement;
+    let el: TimerComponent;
 
     beforeEach(async () => {
-        el = document.createElement('tc-timer');
-        document.body.appendChild(el);
-        await (el as any).updateComplete;
+        el = await mountComponent<TimerComponent>('tc-timer');
     });
 
     afterEach(() => {
         vi.useRealTimers();
-        document.body.innerHTML = '';
+        cleanupDom();
     });
 
     it('affiche 00:00:00 au départ', () => {
-        expect((el as any).timerElement.textContent).toBe('00:00:00');
+        expect(el.timerElement.textContent).toBe('00:00:00');
     });
 
     it('démarre le compteur au premier clic', () => {
         vi.useFakeTimers();
         el.shadowRoot!.querySelector<HTMLElement>('#timer')!.click();
         vi.advanceTimersByTime(3000);
-        expect((el as any).timerElement.textContent).toBe('00:00:03');
+        expect(el.timerElement.textContent).toBe('00:00:03');
     });
 
     it('remet à zéro (synchrone) au second clic', () => {
@@ -31,13 +31,12 @@ describe('tc-timer', () => {
         vi.advanceTimersByTime(5000);
         el.shadowRoot!.querySelector<HTMLElement>('#timer')!.click();
         // vérification synchrone avant le 1er tick du nouvel interval
-        expect((el as any).timerElement.textContent).toBe('00:00:00');
+        expect(el.timerElement.textContent).toBe('00:00:00');
     });
 
     it('formatTime(0) → "00", formatTime(5) → "05", formatTime(10) → 10', () => {
-        const timer = el as any;
-        expect(timer.formatTime(0)).toBe('00');
-        expect(timer.formatTime(5)).toBe('05');
-        expect(timer.formatTime(10)).toBe(10);
+        expect(el.formatTime(0)).toBe('00');
+        expect(el.formatTime(5)).toBe('05');
+        expect(el.formatTime(10)).toBe(10);
     });
 });
