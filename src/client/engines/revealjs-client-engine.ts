@@ -1,11 +1,5 @@
 import { GenericEngine } from './generic-client-engine.js';
-
-interface ClientSlide {
-    h: number;
-    v: number;
-    f: number;
-    fMax: number;
-}
+import type { Slide } from '@event-bus/slide';
 
 export class RevealEngine extends GenericEngine {
     callbackEngine: null = null;
@@ -36,8 +30,8 @@ export class RevealEngine extends GenericEngine {
         });
     }
 
-    override goToSlide(indices: ClientSlide, delta = 0): void {
-        let slideDelta: ClientSlide = { ...indices };
+    override goToSlide(indices: Slide, delta = 0): void {
+        let slideDelta: Slide = { ...indices };
         const slides = this.getSlides();
         const currentIndex = slides.findIndex(slide => slide.h === indices.h && slide.v === indices.v);
         if (currentIndex === -1) {
@@ -55,8 +49,8 @@ export class RevealEngine extends GenericEngine {
         this.Reveal.slide(slideDelta.h, slideDelta.v, slideDelta.f);
     }
 
-    override getSlides(): ClientSlide[] {
-        const slides: ClientSlide[] = [];
+    override getSlides(): Slide[] {
+        const slides: Slide[] = [];
         const horizontalSlides = document.querySelectorAll('.slides>section');
         horizontalSlides.forEach((slideH, indexH) => {
             const fragmentsH = slideH.querySelectorAll('.fragment');

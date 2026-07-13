@@ -2,13 +2,9 @@ import config from '@config/config.json';
 import { createStore, applyMiddleware, Store } from 'redux';
 import { createLogger } from 'redux-logger';
 import { ACTIONS } from './actions';
+import type { Slide } from '@event-bus/slide';
 
-export interface Slide {
-    h: number;
-    v: number;
-    f: number;
-    fMax: number;
-}
+export type { Slide };
 
 export interface TcState {
     currentSlide: Partial<Slide>;
@@ -22,6 +18,9 @@ const initialState: TcState = {
     slides: []
 };
 
+// Les 2 casts ci-dessous restent en l'état (IMP-007) : TcAction.data est volontairement `unknown`,
+// la discrimination stricte par action.type (Redux typé) est le périmètre de l'étape 12 — pas de
+// cet event-bus.
 export const reducers = (state: TcState = initialState, action: TcAction): TcState => {
     const { data } = action;
     switch (action.type) {
