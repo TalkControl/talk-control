@@ -7,8 +7,7 @@ interface MenuPluginsHost {
 
 export class MenuPluginsTCComponent extends TCComponentWrapper<MenuPluginsHost> {
     override init(): void {
-        this.controllerComponentChannel.on('addToPluginsMenu', (data: unknown) => {
-            const { pluginName } = data as { pluginName: string };
+        this.controllerComponentChannel.on('addToPluginsMenu', ({ pluginName }) => {
             this.host.addItemToMenu(pluginName);
         });
         this.controllerComponentChannel.on('deactivatePlugin', () => this.host.showMenu());

@@ -19,7 +19,7 @@ export class TCServer {
             this.engine.init(data);
             this.controllerServerChannel.broadcast('pluginsList', plugins);
         });
-        this.controllerServerChannel.onMultiple('inputEvent', input => this.engine.handleInput(input as { key: string }));
+        this.controllerServerChannel.onMultiple('inputEvent', input => this.engine.handleInput(input));
         this.controllerServerChannel.onMultiple('pluginStartingIn', data => this.controllerServerChannel.broadcast('pluginStartingOut', data));
         this.controllerServerChannel.onMultiple('pluginEndingIn', data => this.controllerServerChannel.broadcast('pluginEndingOut', data));
         this.controllerServerChannel.onMultiple('pluginEventIn', data => this.controllerServerChannel.broadcast('pluginEventOut', data));

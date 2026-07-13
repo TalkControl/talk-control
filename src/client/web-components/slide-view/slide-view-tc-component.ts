@@ -16,8 +16,7 @@ export class SlideViewTCComponent extends TCComponentWrapper<SlideViewHost> {
     }
 
     override init(): void {
-        this.controllerComponentChannel.on('activatePlugin', (data: unknown) => {
-            const { pluginName } = data as { pluginName: string };
+        this.controllerComponentChannel.on('activatePlugin', ({ pluginName }) => {
             pluginService.activateOnComponent(pluginName, this);
         });
     }
