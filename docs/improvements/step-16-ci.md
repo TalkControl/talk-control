@@ -122,9 +122,14 @@ forcés sur Node 24) → actions montées à leur dernière version majeure dans
 
 ### Concurrency
 
-Commit `603cbd7` poussé alors que le run précédent (déclenché par `2ba1984`, `databaseId
-29274995957`) était encore `in_progress` — vérifie que `cancel-in-progress: true` annule bien le run
-devenu obsolète plutôt que de le laisser tourner en parallèle du nouveau.
+Commit `a48ac6f` poussé alors que le run précédent (déclenché par `f99c750`, run `29275092170`)
+était encore `in_progress`. Résultat observé via l'API GitHub Actions :
+- `29275092170` (run obsolète) → `status: completed`, `conclusion: cancelled`.
+- `29275125106` (nouveau run) → passe de `pending` à `in_progress` dès l'annulation du précédent,
+  termine en succès.
+
+`cancel-in-progress: true` confirmé fonctionnel : le run devenu obsolète est bien annulé au profit
+du plus récent, au lieu de tourner en parallèle et de gâcher des minutes CI.
 
 ### Coverage gate
 
