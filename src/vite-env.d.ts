@@ -23,5 +23,3 @@ interface RevealApi {
 interface Window {
     Reveal: RevealApi;
 }
-
-declare module 'redux-logger';

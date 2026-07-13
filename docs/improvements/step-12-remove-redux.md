@@ -72,3 +72,37 @@ grep -rn "redux" src/ test/ package.json   # 0 occurrence
 - Garder `subscribe` qui retourne une fonction d'unsubscribe (Redux le fait) — `TCServer` peut en dépendre.
 - Ne pas en profiter pour ajouter des features au store (sélecteurs, middleware génériques) : KISS, on
   remplace à périmètre égal.
+
+## Résultats de validation
+
+**Décision tracée : [IMP-008](decisions.md#imp-008--suppression-de-redux)** — forme finale du store,
+retypage des créateurs d'actions (divergence assumée vs le step, qui les disait "à garder tels quels"),
+sort détaillé des 3 casts supprimés vs les 2 gardés volontairement.
+
+`npx tsc --noEmit` (0 erreur), `npm run lint` (0 erreur), `NODE_ENV=test npm test` (380/380),
+`npm run test:components` (27/27), `npm run test:e2e` (35/35, golden-path 2/3/4 — navigation — inclus et
+verts), `npm run build` (OK), `npm audit` (0 vulnérabilité) : tous verts.
+
+`grep -rn "redux" src/ test/ package.json` : 1 occurrence résiduelle, `config.logger.redux` — le **nom de
+la clé de config** (`config/config.json`), pas la librairie ; conservé tel quel (renommer une clé de config
+existante est hors périmètre et casse la config des utilisateurs). 0 import/dépendance de la lib.
+
+**Casts** (`grep -rn " as " src/ | wc -l`) : 41 → 38 (-3).
+- 2 supprimés dans `store/index.ts` : les 2 casts différés depuis l'étape 11 (IMP-007,
+  `data as {...}` / `data as Partial<Slide>`) tombent grâce à la discrimination stricte de l'union
+  `TcAction` sur `action.type`.
+- 1 supprimé dans `revealjs-server-engine.ts:7` (`params as object`) : `GenericEngine.init` retypé
+  `TcEventMap['init']` au lieu de `unknown`, spread remplacé par une construction explicite et défensive
+  (`slides: params?.slides ?? []`).
+- 2 gardés volontairement dans `revealjs-server-engine.ts:16,58` (`currentSlide as Slide`) : `TcState.
+  currentSlide` est honnêtement `Partial<Slide>` (`GOTO_SLIDE` ne transporte jamais `fMax`) ; les faire
+  disparaître aurait exigé soit un mensonge de type (`Slide` complet), soit de toucher
+  `handleInput`/`handleTouch` — explicitement hors périmètre (étape 13). Détail dans IMP-008.
+
+**Fichiers touchés** : `store/actions.ts` (typage `TcAction`/`InitData`), `store/index.ts` (store + reduce
++ logger conditionnel), `generic-server-engine.ts` (`TcStore`, `init` typé), `revealjs-server-engine.ts`
+(cast `params` supprimé, 2 casts `Slide` documentés), `vite-env.d.ts` (`declare module 'redux-logger'`
+supprimé), `package.json`/`package-lock.json` (-4 dépendances, -7 paquets). 3 fichiers de test adaptés :
+`store.spec.ts`/`actions.spec.ts` (typage, plus de `as any` sur le state), `tc-server.spec.ts`
+(`redux-mock-store` → `createTcStore(état)`), `revealjs-server-engine.spec.ts` (type `Store` de `redux` →
+`TcStore`).

@@ -1,5 +1,5 @@
 import { RevealEngine } from '@server/engines/revealjs-server-engine';
-import { Store } from 'redux';
+import { TcStore } from '@server/store';
 
 describe('RevealServerEngine', function () {
     const slides = [
@@ -7,7 +7,7 @@ describe('RevealServerEngine', function () {
         { h: 1, v: 0, f: -1, fMax: 2 },
         { h: 1, v: 1, f: -1, fMax: 2 }
     ];
-    let engine!: RevealEngine, store!: Store;
+    let engine!: RevealEngine, store!: TcStore;
 
     beforeEach(function () {
         engine = new RevealEngine();

@@ -422,14 +422,62 @@ wc -l`, inclut du bruit de commentaires JSDoc pré-existant sans rapport) : 45 �
 
 ## IMP-008 — Suppression de Redux
 
-**Étape :** 12 | **Statut :** ⬜
+**Étape :** 12 | **Statut :** ✅
 
 ### Contexte
 Redux surdimensionné : 1 store, 1 reducer, 2 actions, 1 abonné.
 
-### Décision (à confirmer)
-Store minimal typé maison (~40 l.), API `dispatch`/`getState`/`subscribe` conservée, logger conditionnel
-maison. Suppression redux + redux-logger + redux-mock-store.
+### Décision
+Store minimal typé maison (`src/server/store/index.ts`, ~35 l.), API `dispatch`/`getState`/`subscribe`
+conservée à l'identique (`subscribe` retourne toujours une fonction d'unsubscribe). `createTcStore(initial:
+TcState = initialState)` accepte désormais un état initial optionnel — nécessaire pour les tests (chaque
+scénario a besoin d'un état de départ différent), impossible à obtenir proprement avec l'ancienne signature
+sans argument.
+
+`TcAction` devient une **union discriminée** (`{ type: 'INIT'; data: InitData } | { type: 'GOTO_SLIDE';
+data: Partial<Slide> }`) au lieu de `{ type: string; data?: unknown }`. Les créateurs d'actions
+(`init`/`gotoSlide`) sont retypés en conséquence — contrairement à ce que suggérait le step ("gardés tels
+quels, déjà minimaux"), les retyper ne coûte rien et élimine les 2 casts differés depuis IMP-007
+(`store/index.ts:28,32`) sans élargir le périmètre : le reducer discrimine maintenant par
+`action.type` sans cast, exactement comme un `switch` sur une union TypeScript classique.
+
+Logger conditionnel maison sur `config.logger.redux` (clé de config **conservée telle quelle** — c'est un
+nom d'option existant dans `config.json`, pas une référence à la lib ; renommer aurait cassé la config des
+utilisateurs sans bénéfice), branché directement dans `dispatch()` via le service `logger` existant
+(`src/common/services/logger.ts`), sur le modèle de `eventBusLogger` (`event-bus-logger.ts`) — pas de
+middleware, pas de nouveau module.
+
+### Casts : 3 supprimés, 2 gardés volontairement (documentés)
+- **2 supprimés** (`store/index.ts`) : la discrimination stricte par `action.type` sur l'union `TcAction`
+  rend `data as {...}` et `data as Partial<Slide>` inutiles — c'était exactement le report annoncé par
+  IMP-007.
+- **1 supprimé** (`revealjs-server-engine.ts:7`, `params as object`) : `GenericEngine.init`/`RevealEngine.init`
+  retypés `params: TcEventMap['init']` (`{ slides: Slide[] } | undefined`) au lieu de `unknown` — le typage
+  remonte jusqu'à la frontière event-bus, cohérent avec IMP-007. Le spread `{ ...(params as object),
+  currentSlide }` est remplacé par une construction explicite `{ slides: params?.slides ?? [], currentSlide
+  }` : sans cast, et défensif sur le cas `undefined` (branche théorique du type partagé côté composant,
+  jamais vraie côté serveur en pratique, cf. IMP-007) sans changer le comportement runtime observable.
+- **2 gardés volontairement** (`revealjs-server-engine.ts:16,58`, `currentSlide as Slide` dans
+  `handleInput`/`handleTouch`) : `TcState.currentSlide` est honnêtement `Partial<Slide>` — `GOTO_SLIDE` ne
+  transporte jamais `fMax` (`_nextHorizontalSlide`, `_prevSlide`, etc. dispatchent des slides sans `fMax`).
+  Le typer en `Slide` complet pour faire disparaître le cast aurait été un **mensonge de type** (le champ
+  n'est structurellement pas toujours complet) ; corriger la navigation pour transporter systématiquement un
+  `Slide` complet touche `handleInput`/`handleTouch`, explicitement hors périmètre (étape 13). Cast conservé
+  et documenté inline, sur le même principe que les casts pass-through différés par IMP-007.
+
+**Bilan chiffré** (`grep -rn " as " src/ | wc -l`) : 41 → 38 (-3). `grep -rn redux src/ test/ package.json` :
+1 seule occurrence restante, `config.logger.redux` (le nom de la clé de config, pas la librairie) — le grep
+« 0 occurrence » du step visait la lib, atteint pour les imports/dépendances.
+
+### Conséquences
+Suppression de `redux`, `redux-logger`, `redux-mock-store`, `@types/redux-mock-store` (package.json + lock,
+-7 paquets). `test/server/tc-server.spec.ts` : `redux-mock-store` remplacé par `createTcStore(état)` — un
+vrai store en test plutôt qu'un mock, plus simple pour un store de 35 lignes (conforme au risque anticipé
+par le step). `test/server/engines/revealjs-server-engine.spec.ts` : le type `Store` importé de `redux`
+remplacé par `TcStore` (`ReturnType<typeof createTcStore>`, exporté depuis `@server/store`).
+
+Aucune régression : `tsc --noEmit` 0 erreur, lint 0 erreur, 380 tests unitaires, 27 tests composants,
+35 tests e2e (golden-path 2/3/4 — navigation — verts), build OK, audit 0 vulnérabilité.
 
 ---
 

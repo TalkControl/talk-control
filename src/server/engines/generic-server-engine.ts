@@ -1,14 +1,14 @@
-import { createTcStore, TcState } from '@server/store';
-import { Store } from 'redux';
+import { createTcStore, TcStore } from '@server/store';
+import type { TcEventMap } from '@event-bus/events';
 
 export class GenericEngine {
-    store: Store<TcState>;
+    store: TcStore;
 
     constructor() {
         this.store = createTcStore();
     }
 
-    init(_params: unknown): void {}
+    init(_params: TcEventMap['init']): void {}
 
     handleInput(_event: { key: string }): void {}
 

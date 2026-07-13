@@ -1,14 +1,18 @@
 import { init, gotoSlide } from '../store/actions';
 import { Slide } from '../store/index';
 import { GenericEngine } from './generic-server-engine';
+import type { TcEventMap } from '@event-bus/events';
 
 export class RevealEngine extends GenericEngine {
-    override init(params: unknown): void {
-        this.store.dispatch(init({ ...(params as object), currentSlide: { h: 0, v: 0, f: -1 } }));
+    override init(params: TcEventMap['init']): void {
+        this.store.dispatch(init({ slides: params?.slides ?? [], currentSlide: { h: 0, v: 0, f: -1 } }));
     }
 
     override handleInput({ key }: { key: string }): void {
         const { slides } = this.store.getState();
+        // IMP-008 : currentSlide est Partial<Slide> côté store (GOTO_SLIDE n'y met jamais fMax,
+        // cf. _gotoSlide/_nextHorizontalSlide etc. ci-dessous) ; le cast reflète un vrai écart
+        // avec la navigation (hors périmètre, étape 13), pas un oubli de typage.
         const currentSlide = this.store.getState().currentSlide as Slide;
         const currentSlideIndex = slides.findIndex(s => this.slideEquals(s, currentSlide, false));
         const { fMax } = slides[currentSlideIndex];
@@ -50,6 +54,7 @@ export class RevealEngine extends GenericEngine {
 
     override handleTouch({ direction }: { direction: string }): void {
         const { slides } = this.store.getState();
+        // IMP-008 : voir handleInput() ci-dessus, même écart Partial<Slide>/Slide.
         const currentSlide = this.store.getState().currentSlide as Slide;
         const currentSlideIndex = slides.findIndex(s => this.slideEquals(s, currentSlide, false));
         const { fMax } = slides[currentSlideIndex];
