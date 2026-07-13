@@ -147,3 +147,4 @@ npm run test:e2e            → 35/35 (échec initial dû à un process `serve` 
                                sans lien avec les changements de cette étape — tué, tests relancés)
 npm run docs:build          → 179 pages Markdown générées (TypeDoc), doc API non vide
 ```
+
