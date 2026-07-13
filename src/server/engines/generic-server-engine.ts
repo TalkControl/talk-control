@@ -12,8 +12,6 @@ export class GenericEngine {
 
     handleInput(_event: { key: string }): void {}
 
-    handleTouch(_event: { direction: string }): void {}
-
     slideEquals(_slide1: unknown, _slide2: unknown, _includeFragment?: boolean): boolean {
         return false;
     }
