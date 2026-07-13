@@ -23,7 +23,7 @@ describe('KeyboardInput', function () {
     });
 
     describe('init()', function () {
-        it('should register keyup, keypressed and keydown listeners and mark itself initialized', function () {
+        it('should register keyup and keydown listeners and mark itself initialized', function () {
             // Given
             const addEventListenerSpy = vi.spyOn(globalThis, 'addEventListener');
 
@@ -32,7 +32,6 @@ describe('KeyboardInput', function () {
 
             // Then
             expect(addEventListenerSpy).toHaveBeenCalledWith('keyup', expect.any(Function), true);
-            expect(addEventListenerSpy).toHaveBeenCalledWith('keypressed', expect.any(Function), true);
             expect(addEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function), true);
             expect(instance.initialized).toBe(true);
         });

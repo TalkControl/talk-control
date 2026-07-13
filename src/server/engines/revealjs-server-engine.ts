@@ -52,42 +52,6 @@ export class RevealEngine extends GenericEngine {
         }
     }
 
-    override handleTouch({ direction }: { direction: string }): void {
-        const { slides } = this.store.getState();
-        // IMP-008 : voir handleInput() ci-dessus, même écart Partial<Slide>/Slide.
-        const currentSlide = this.store.getState().currentSlide as Slide;
-        const currentSlideIndex = slides.findIndex(s => this.slideEquals(s, currentSlide, false));
-        const { fMax } = slides[currentSlideIndex];
-        const nextVerticalSlide = slides.find(slide => currentSlide.h === slide.h && slide.v === currentSlide.v + 1);
-        const nextHorizontalSlide = slides.find(slide => currentSlide.h + 1 === slide.h);
-        const prevVerticalSlide = slides.find(slide => currentSlide.h === slide.h && slide.v === currentSlide.v - 1);
-        const prevHorizontalSlide = slides.find(slide => currentSlide.h - 1 === slide.h);
-
-        switch (direction) {
-            case 'left':
-                if (currentSlide.f < fMax - 1) this._nextFragment(currentSlide);
-                else if (nextHorizontalSlide) this._nextHorizontalSlide(currentSlide);
-                break;
-            case 'right':
-                if (currentSlide.f > -1) this._prevFragment(currentSlide);
-                else if (prevHorizontalSlide) this._prevSlide(prevHorizontalSlide);
-                break;
-            case 'up':
-                if (currentSlide.f < fMax - 1) this._nextFragment(currentSlide);
-                else if (nextVerticalSlide) this._nextVerticalSlide(currentSlide);
-                break;
-            case 'down':
-                if (currentSlide.f > -1) this._prevFragment(currentSlide);
-                else if (prevVerticalSlide) this._prevSlide(prevVerticalSlide);
-                break;
-            case 'none':
-                if (currentSlide.f < fMax - 1) this._nextFragment(currentSlide);
-                else if (nextVerticalSlide) this._nextVerticalSlide(currentSlide);
-                else if (nextHorizontalSlide) this._nextHorizontalSlide(currentSlide);
-                break;
-        }
-    }
-
     override slideEquals(slide1: Slide, slide2: Slide, includeFragment = true): boolean {
         return slide1.h === slide2.h && slide1.v === slide2.v && (!includeFragment || slide1.f === slide2.f);
     }

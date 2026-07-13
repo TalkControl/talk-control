@@ -19,8 +19,7 @@ export class UrlFormComponent extends TcStyledElement {
         const urlError = this.urlError;
 
         presentationUrl.addEventListener('keypress', e => {
-            const key = (e as KeyboardEvent).which || (e as KeyboardEvent).keyCode;
-            if (key === 13) {
+            if ((e as KeyboardEvent).key === 'Enter') {
                 validateUrl();
             }
         });

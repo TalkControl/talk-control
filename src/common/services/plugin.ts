@@ -1,4 +1,5 @@
 import { loadPluginModule } from '@plugins/plugin-loader';
+import { logger } from '@services/logger';
 import { TCController } from '@client/tc-controller/tc-controller';
 import type { TCComponentHost } from '@event-bus/event-bus-component';
 
@@ -19,13 +20,13 @@ function activateOnController(pluginName: string, controller: TCController): Pro
                 plugin.instance.onEvent(event => controller.controllerServerChannel.broadcast(plugin.instance.type, event));
             }
         })
-        .catch(e => console.error('Unable to load plugin module', e));
+        .catch(e => logger.log('Unable to load plugin module', e, true));
 }
 
 function deactivateOnController(pluginName: string): Promise<void> {
     return loadPluginModule(pluginName)
         .then(plugin => plugin?.instance.unload())
-        .catch(e => console.error('Unable to unload plugin module', e));
+        .catch(e => logger.log('Unable to unload plugin module', e, true));
 }
 
 function activateOnComponent(pluginName: string, component: TCComponentHost): Promise<void> {
@@ -37,7 +38,7 @@ function activateOnComponent(pluginName: string, component: TCComponentHost): Pr
                 plugin.instance.onEvent((type, event) => component.controllerComponentChannel.broadcast(type, event));
             }
         })
-        .catch(e => console.error('Unable to load plugin module', e));
+        .catch(e => logger.log('Unable to load plugin module', e, true));
 }
 
 export default { activateOnController, deactivateOnController, activateOnComponent };

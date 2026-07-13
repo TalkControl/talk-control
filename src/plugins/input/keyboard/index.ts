@@ -9,7 +9,8 @@ class KeyboardInput extends Plugin {
 
     override init(): void {
         addEventListener('keyup', e => this._captureKeyboardEvent(e, true), true);
-        addEventListener('keypressed', this._captureKeyboardEvent.bind(this) as EventListener, true);
+        // keydown sans forward : ne sert qu'à stopPropagation sur les touches bloquées,
+        // avant que la présentation embarquée ne les voie. Seul keyup déclenche la navigation.
         addEventListener('keydown', this._captureKeyboardEvent.bind(this), true);
         this.initialized = true;
     }

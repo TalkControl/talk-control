@@ -1,4 +1,5 @@
 import { Plugin } from '@plugins/plugin.js';
+import { logger } from '@services/logger';
 
 interface PointerState {
     x: string;
@@ -81,7 +82,7 @@ class TouchPointerInput extends Plugin {
     _removePointer(): void {
         const currentSlide = document.getElementById('currentSlide');
         if (!currentSlide || !currentSlide.shadowRoot) {
-            console.log('no current slide nor shadowroot');
+            logger.log('no current slide nor shadowroot');
             return;
         }
 

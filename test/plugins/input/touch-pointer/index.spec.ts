@@ -1,4 +1,5 @@
 import { instance } from '@plugins/input/touch-pointer/index.js';
+import { logger } from '@services/logger';
 
 function buildCurrentSlide(): { host: HTMLElement; shadowRoot: ShadowRoot; frame: HTMLElement; section: HTMLElement } {
     const host = document.createElement('div');
@@ -109,13 +110,13 @@ describe('TouchPointerInput', function () {
 
         it('should log and do nothing on _removePointer when there is no current slide', function () {
             // Given
-            const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+            const loggerSpy = vi.spyOn(logger, 'log').mockImplementation(() => {});
 
             // When
             instance._removePointer();
 
             // Then
-            expect(consoleLogSpy).toHaveBeenCalledWith('no current slide nor shadowroot');
+            expect(loggerSpy).toHaveBeenCalledWith('no current slide nor shadowroot');
         });
 
         it('should do nothing when the current slide has no shadowRoot', function () {
