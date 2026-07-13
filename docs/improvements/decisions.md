@@ -483,14 +483,31 @@ Aucune régression : `tsc --noEmit` 0 erreur, lint 0 erreur, 380 tests unitaires
 
 ## IMP-009 — Sort de handleTouch (bug vs code mort)
 
-**Étape :** 13 | **Statut :** ⬜ à investiguer
+**Étape :** 13 | **Statut :** ✅ tranché : code mort, supprimé (2026-07-13, branche `fix/step-13-server-engine`)
 
 ### Contexte
 `RevealEngine.handleTouch` dupliqué de `handleInput` et jamais câblé dans `TCServer.init`.
 
-### Décision (à trancher à l'implémentation)
-Investiguer si le plugin touch doit router vers `handleTouch` (→ câbler, bug fonctionnel) ou si le touch est
-client-only (→ supprimer, code mort). Ne pas dédupliquer avant d'avoir tranché.
+### Constat (vérifié par JF sur le code post-étape 12, confirmé à l'implémentation)
+- Le plugin `touch` (`src/plugins/input/touch/index.ts`) déclare `type = 'inputEvent'` (ligne 14) et
+  convertit **déjà** le geste tactile (delta touchstart/touchend) en `{ key: action }` avec le vocabulaire
+  clavier `arrowRight`/`arrowLeft`/`arrowUp`/`arrowDown`/`space` (lignes 42-54). Son flux passe donc par le
+  listener `inputEvent` de `TCServer` (`tc-server.ts:22`) → `engine.handleInput` — jamais par `handleTouch`.
+- Le plugin `touch-pointer` (`type = 'touchPointerEvent'`) est une feature totalement différente (pointeur
+  laser/zoom via `postMessage`) qui ne pilote jamais la navigation.
+- Aucun plugin n'émet le payload `{ direction: 'left'|'right'|'up'|'down'|'none' }` attendu par
+  `handleTouch` — ce vocabulaire n'existe nulle part à l'émission.
+
+### Décision
+**Code mort, supprimé** — pas un bug fonctionnel latent à câbler : la navigation tactile serveur fonctionne
+déjà, portée par `handleInput` via le vocabulaire `inputEvent` commun au clavier (mutualisation volontaire
+côté plugins, les deux déclarent le même `type`). Suppression de `handleTouch` dans `RevealEngine`,
+`GenericEngine` et de ses tests dédiés (17 cas). Comportement tactile observable inchangé.
+
+### Conséquences
+~35 lignes dupliquées de `handleInput` disparaissent avec leur porteur — la déduplication
+`computeNeighbors` envisagée par le step-13 devient sans objet : le calcul des slides voisines n'a plus
+qu'un seul site d'usage, l'extraire n'apporterait que de l'indirection (KISS).
 
 ---
 
