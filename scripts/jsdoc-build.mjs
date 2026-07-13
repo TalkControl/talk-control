@@ -1,64 +1,38 @@
 #!/usr/bin/env node
 /**
- * Replaces vuepress-jsdoc: scans src/, generates per-file Markdown via jsdoc-to-markdown,
- * writes to docs-sources/developers/code/parts/ and regenerates the README index.
+ * Generates the API reference under docs-sources/developers/code/ via TypeDoc + typedoc-plugin-markdown.
+ * Replaces jsdoc-to-markdown (step 16): jsdoc's parser cannot handle TypeScript syntax (interfaces,
+ * generics, type annotations aren't valid JS), and src/ has been 100% TypeScript since the lit/event-bus
+ * migration — jsdoc:build silently generated 0 files.
  */
-import jsdoc2md from 'jsdoc-to-markdown';
-import { mkdirSync, writeFileSync, readdirSync } from 'fs';
-import { join, relative, dirname, basename } from 'path';
+import { Application, TSConfigReader } from 'typedoc';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');
-const srcDir = join(root, 'src');
-const partsDir = join(root, 'docs-sources/developers/code/parts');
+const out = join(root, 'docs-sources/developers/code');
 
-/**
- * Recursively collects .js source files under `dir`, excluding *.spec.js.
- *
- * @param {string} dir - directory to scan
- * @returns {string[]} absolute paths of matching files
- */
-function findJsFiles(dir) {
-    const entries = readdirSync(dir, { withFileTypes: true });
-    return entries.flatMap(entry => {
-        const full = join(dir, entry.name);
-        if (entry.isDirectory()) return findJsFiles(full);
-        if (entry.isFile() && entry.name.endsWith('.js') && !entry.name.endsWith('.spec.js')) return [full];
-        return [];
-    });
+const app = await Application.bootstrapWithPlugins(
+    {
+        entryPoints: ['src'],
+        entryPointStrategy: 'expand',
+        tsconfig: 'tsconfig.json',
+        exclude: ['src/environment/**', 'src/client/layouts/**', '**/*.spec.ts', 'src/vite-env.d.ts'],
+        plugin: ['typedoc-plugin-markdown'],
+        readme: 'none',
+        entryFileName: 'index.md',
+        githubPages: false,
+        out
+    },
+    [new TSConfigReader()]
+);
+
+const project = await app.convert();
+if (!project) {
+    console.error('jsdoc-build: TypeDoc conversion failed');
+    process.exit(1);
 }
 
-const generated = [];
-
-for (const file of findJsFiles(srcDir)) {
-    const relPath = relative(srcDir, file).replace(/\.js$/, '.md');
-    const outFile = join(partsDir, relPath);
-
-    const md = await jsdoc2md.render({ files: file });
-    if (!md.trim()) continue;
-
-    mkdirSync(dirname(outFile), { recursive: true });
-    writeFileSync(outFile, md);
-    generated.push(relPath);
-}
-
-// Regenerate the README index grouped by top-level directory
-const byGroup = generated.reduce((acc, f) => {
-    const group = f.split('/')[0];
-    (acc[group] ??= []).push(f);
-    return acc;
-}, {});
-
-const indexLines = ['# API Reference\n'];
-for (const [group, files] of Object.entries(byGroup).sort()) {
-    indexLines.push(`## ${group.charAt(0).toUpperCase() + group.slice(1)}\n`);
-    for (const f of files.sort()) {
-        const name = basename(f, '.md');
-        indexLines.push(`- [${name}](parts/${f})`);
-    }
-    indexLines.push('');
-}
-
-writeFileSync(join(root, 'docs-sources/developers/code/index.md'), indexLines.join('\n'));
-console.log(`jsdoc-build: ${generated.length} file(s) generated in docs-sources/developers/code/parts/`);
+await app.generateOutputs(project);
+console.log(`jsdoc-build: API reference generated in ${out}`);
