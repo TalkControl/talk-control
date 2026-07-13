@@ -1,10 +1,10 @@
 import { init, gotoSlide, ACTIONS } from '@server/store/actions';
 
-describe('redux actions', function () {
+describe('actions', function () {
     describe('init()', function () {
         it('should create a "init" action', function () {
             // Given
-            const data = { slideNumber: 15 };
+            const data = { currentSlide: { h: 0, v: 0, f: 0 }, slides: [{ h: 0, v: 0, f: 0, fMax: 3 }] };
             // Then
             expect(init(data)).toEqual({ type: ACTIONS.INIT, data });
         });
