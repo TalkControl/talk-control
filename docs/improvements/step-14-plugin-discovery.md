@@ -60,3 +60,39 @@ npm run build             # import.meta.glob résolu correctement par Vite au bu
   ou limiter la découverte au client. Trancher selon l'usage réel et documenter dans IMP-010.
 - Ne pas sur-concevoir un système de plugins tiers/externes : le besoin est de dé-verrouiller l'ajout de
   plugins internes, pas de bâtir un marketplace. KISS.
+
+## Résultats de validation (2026-07-13, branche `feat/step-14-plugin-discovery`)
+
+### Décisions et écarts avec le texte du plan (constats vérifiés sur le code post-étape 13)
+
+- **Loader confirmé client-only** (voir IMP-010) : `loadPluginModule` n'est appelé que par
+  `src/common/services/plugin.ts`, lui-même utilisé uniquement côté `TCController`/composants. Aucun usage
+  serveur (`grep -rn "plugin-loader" src/server src/environment` → 0 résultat). Le piège « `import.meta.glob`
+  côté Node » ne s'applique pas — pas de registre généré de repli nécessaire.
+- **Convention de nommage retenue : dérivée du chemin**, pas d'export `name` ajouté aux 3 modules de
+  plugins. `input/<dossier>` → `camelCase(dossier) + "Input"` couvre les 3 cas réels
+  (`keyboard`→`keyboardInput`, `touch`→`touchInput`, `touch-pointer`→`touchPointerInput`) sans toucher au
+  code des plugins existants (plus KISS que l'option "export `name`" envisagée par le plan).
+- **Pattern de glob étroit** : `./input/*/index.ts` (et non `**`) — `touch-pointer/components/*.ts` n'a pas
+  d'`index.ts` aujourd'hui donc pas de faux positif avec `**`, mais le pattern étroit protège l'invariant
+  contre de futurs sous-dossiers non prévus comme plugins.
+- **`plugins.json` inchangé** : reste la source d'activation (`name` + `autoActivate`), aucun renommage
+  d'entrée.
+- **`tsconfig.json`** : ajout de `"vite/client"` aux `types` (nécessaire pour typer `ImportMeta.glob`,
+  absent du plan mais requis mécaniquement).
+- **Contrat de retour préservé** : `Promise<PluginModule | undefined>` inchangé. Nom absent du glob →
+  warning `logger.log(..., true)` + `undefined` (au lieu du `default:` silencieux du switch). Les 5 cas
+  existants de `plugin-loader.spec.ts` passent sans modification de leurs assertions ; +1 cas ajouté
+  (warning loggé sur nom inconnu).
+
+### Commandes
+
+| Vérification | Résultat |
+|---|---|
+| `NODE_ENV=test npm test` | ✅ 364/364 (363 + 1 cas warning ajouté) |
+| `npm run test:components` | ✅ 27/27 (Chromium réel) |
+| `npm run test:e2e -- e2e/golden-path/14-plugins.spec.js` | ✅ golden-path 7 (menu plugins) vert |
+| `npx tsc --noEmit` | ✅ 0 erreur |
+| `npm run lint` | ✅ 0 erreur |
+| `npm run build` | ✅ OK — 3 chunks `touch-*`/`keyboard-*`/`touch-pointer-*` distincts confirmés dans `dist/`, code-splitting préservé |
+| `npm audit` | ✅ 0 vulnérabilité |

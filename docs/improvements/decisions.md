@@ -513,11 +513,43 @@ qu'un seul site d'usage, l'extraire n'apporterait que de l'indirection (KISS).
 
 ## IMP-010 — Découverte automatique des plugins
 
-**Étape :** 14 | **Statut :** ⬜
+**Étape :** 14 | **Statut :** ✅ tranché (2026-07-13, branche `feat/step-14-plugin-discovery`)
 
-### Décision (à confirmer)
-`import.meta.glob` remplace le switch codé en dur, `plugins.json` reste source d'activation. Vérifier la
-compatibilité client/serveur du loader (import.meta.glob est Vite-only).
+### Constat (client-only confirmé)
+`loadPluginModule` (`src/plugins/plugin-loader.ts`) n'est appelé que par `src/common/services/plugin.ts`
+(`activateOnController`/`deactivateOnController`/`activateOnComponent`), lui-même invoqué depuis
+`TCController` et les composants côté navigateur. Aucun usage côté `src/server/` ni `src/environment/` —
+le serveur ne connaît les plugins que par le JSON (`tc-server.ts:20`, broadcast `pluginsList`). Le piège
+« `import.meta.glob` côté Node » anticipé par le step ne s'applique donc pas : le loader tourne exclusivement
+dans un contexte Vite (build client + Vitest, même moteur), `import.meta.glob` y est pleinement utilisable.
+
+### Décision
+`import.meta.glob('./input/*/index.ts')` (lazy, non-eager) remplace le switch codé en dur dans
+`plugin-loader.ts`. Pattern étroit délibéré (`./input/*/index.ts`, pas `**`) : les composants de
+`touch-pointer/components/*.ts` n'ont pas d'`index.ts` aujourd'hui donc pas de faux positif, mais un pattern
+large exposerait le loader à de futurs sous-dossiers non prévus comme plugins.
+
+**Convention de nommage** (dérivée du chemin, pas de `name` exporté ajouté) : `input/<dossier>` →
+`camelCase(dossier) + "Input"`, ex. `keyboard` → `keyboardInput`, `touch` → `touchInput`,
+`touch-pointer` → `touchPointerInput`. Retenue plutôt qu'un export `name` par plugin : les 3 noms
+`plugins.json` s'en déduisent mécaniquement sans toucher aux 3 modules de plugins existants (KISS,
+n'ajoute pas un second endroit à synchroniser).
+
+`config/plugins.json` reste la **source d'activation** (quels plugins actifs + `autoActivate`) — pas
+renommé, pas transformé en catalogue de code. Un plugin découvert par le glob mais absent de
+`plugins.json` n'est jamais chargé (contrôle explicite conservé) ; un nom de `plugins.json` sans module
+correspondant déclenche un warning via `logger.log(..., true)` au lieu d'un retour `undefined` silencieux,
+mais le contrat de retour (`Promise<PluginModule | undefined>`) est inchangé pour ne pas casser les
+appelants ni les specs existants.
+
+### Conséquences
+Ajouter un plugin ne nécessite plus qu'une seule édition manuelle (`config/plugins.json`) — le switch codé
+en dur disparaît. `tsconfig.json` : ajout de `"vite/client"` aux `types` pour typer `ImportMeta.glob`.
+5 cas existants de `test/plugins/plugin-loader.spec.ts` conservés tels quels (contrat de retour identique),
++1 cas ajouté (nom inconnu → warning loggé). `build` confirme le code-splitting préservé : 3 chunks
+`touch-*`/`keyboard-*`/`touch-pointer-*` distincts générés par le glob. Aucune régression : `tsc --noEmit`
+0 erreur, lint 0 erreur, 364 tests unitaires, 27 tests composants (moteur navigateur réel), e2e
+golden-path 14 (menu plugins) vert, audit 0 vulnérabilité.
 
 ---
 
