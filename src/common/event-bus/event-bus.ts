@@ -1,3 +1,4 @@
+import { logger } from '@services/logger';
 import type { PayloadFor } from './events';
 
 export const NO_KEY_PROVIDED = 'No key provided';
@@ -45,7 +46,7 @@ export class EventBus {
             try {
                 callback(data);
             } catch (e) {
-                console.error(e);
+                logger.log(`Error in '${key}' event callback`, e, true);
             }
         });
     }
