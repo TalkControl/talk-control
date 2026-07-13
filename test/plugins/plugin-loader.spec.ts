@@ -1,4 +1,5 @@
 import { loadPluginModule } from '@plugins/plugin-loader';
+import { logger } from '@services/logger';
 
 describe('loadPluginModule', function () {
     it('should return a Promise for "keyboardInput"', async function () {
@@ -25,6 +26,15 @@ describe('loadPluginModule', function () {
         return result.then(value => {
             expect(value).toBeUndefined();
         });
+    });
+
+    it('should log a warning for unknown plugin name', async function () {
+        const logSpy = vi.spyOn(logger, 'log').mockImplementation(() => {});
+
+        await loadPluginModule('unknownPlugin');
+
+        expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('unknownPlugin'), undefined, true);
+        logSpy.mockRestore();
     });
 
     it('should return a Promise for undefined name', function () {
