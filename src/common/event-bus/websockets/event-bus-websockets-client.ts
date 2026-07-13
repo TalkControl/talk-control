@@ -1,6 +1,7 @@
 import socketIO, { Socket } from 'socket.io-client';
 import { EventBus, EventCallback } from '../event-bus';
 import { eventBusLogger } from '@event-bus/event-bus-logger';
+import type { PayloadFor } from '../events';
 
 type SocketIOWithConnect = typeof socketIO & { connect: (url?: string, opts?: { auth: { sessionId?: string } }) => Socket };
 
@@ -14,12 +15,15 @@ export class EventBusWebsocketsClient extends EventBus {
         this.io = (socketIO as SocketIOWithConnect).connect(server, { auth: { sessionId } });
     }
 
-    onMultiple(key: string, callback: EventCallback): void {
+    onMultiple<K extends string>(key: K, callback: EventCallback<PayloadFor<K>>): void {
         super.onMultiple(key, callback);
-        this.io.on(key, callback);
+        // socket.io-client type ses events réservés (connect, disconnect, ...) via son propre
+        // générique ; il ne peut pas s'unifier avec notre K encore ouvert ici (plomberie interne,
+        // pas un cast de payload métier — IMP-007).
+        this.io.on(key as string, callback as EventCallback);
     }
 
-    on(key: string, callback: EventCallback): void {
+    on<K extends string>(key: K, callback: EventCallback<PayloadFor<K>>): void {
         try {
             super.on(key, callback);
             this.onMultiple(key, callback);
@@ -28,12 +32,12 @@ export class EventBusWebsocketsClient extends EventBus {
         }
     }
 
-    broadcast(key: string, data?: unknown): void {
+    broadcast<K extends string>(key: K, data?: PayloadFor<K>): void {
         super.broadcast(key, data);
         this.io.emit(key, data);
     }
 
-    emitTo(key: string, data: unknown, socket: { emit: (key: string, data: unknown) => void }): void {
+    emitTo<K extends string>(key: K, data: PayloadFor<K>, socket: { emit: (key: string, data: unknown) => void }): void {
         super.emitTo(key, data, socket);
         socket.emit(key, data);
     }

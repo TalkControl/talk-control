@@ -19,6 +19,12 @@ interface ChannelOptions {
     sessionId?: string;
 }
 
+// Côté serveur, `server` est toujours l'instance http.Server ; côté client, toujours l'URL
+// à laquelle se connecter. La garde remplace le double cast `as unknown as string` (IMP-007).
+function isServerUrl(server: ChannelOptions['server']): server is string {
+    return typeof server === 'string';
+}
+
 export class EventBusResolver {
     static channel(name: Channel, options: ChannelOptions = {}): EventBus {
         if (!contextService.isClientSide()) {
@@ -30,8 +36,13 @@ export class EventBusResolver {
             }
         } else {
             switch (name) {
-                case Channels.CONTROLLER_SERVER:
-                    return new EventBusProxy(Channels.CONTROLLER_SERVER, new EventBusWebsocketsClient(options.server as unknown as string, options.sessionId));
+                case Channels.CONTROLLER_SERVER: {
+                    const { server } = options;
+                    return new EventBusProxy(
+                        Channels.CONTROLLER_SERVER,
+                        new EventBusWebsocketsClient(isServerUrl(server) ? server : undefined, options.sessionId)
+                    );
+                }
                 case Channels.CONTROLLER_COMPONENT:
                     return new EventBusProxy(Channels.CONTROLLER_COMPONENT, new EventBusPostMessage(options.deep));
                 default:

@@ -1,5 +1,6 @@
 import { EventBus } from '../event-bus.js';
 import { querySelectorAllDeep } from 'query-selector-shadow-dom';
+import type { PayloadFor } from '../events';
 
 export class EventBusPostMessage extends EventBus {
     windows: Window[];
@@ -12,7 +13,7 @@ export class EventBusPostMessage extends EventBus {
         window.addEventListener('message', this._receiveMessageWindow.bind(this), false);
     }
 
-    broadcast(key: string, data?: unknown): void {
+    broadcast<K extends string>(key: K, data?: PayloadFor<K>): void {
         super.broadcast(key, data);
         this.windows.forEach(w =>
             w.postMessage(
@@ -25,7 +26,7 @@ export class EventBusPostMessage extends EventBus {
         );
     }
 
-    emitTo(key: string, data: unknown, targetWindow: Window): void {
+    emitTo<K extends string>(key: K, data: PayloadFor<K>, targetWindow: Window): void {
         super.emitTo(key, data, targetWindow);
 
         targetWindow.postMessage(
@@ -42,10 +43,12 @@ export class EventBusPostMessage extends EventBus {
             return;
         }
 
+        // message.data est `any` (type DOM) : la double couche est l'enveloppe postMessage
+        // { type, data }, pas un payload TcEventMap — pas de sur-typage ici (IMP-007).
         if (typeof message.data === 'object' && message.data.type) {
-            const callBacks = super.getCallbacks(message.data.type as string);
+            const callBacks = super.getCallbacks(message.data.type);
             if (callBacks && callBacks.length > 0) {
-                callBacks.forEach(callback => callback((message.data as { data: unknown }).data));
+                callBacks.forEach(callback => callback(message.data.data));
             }
         }
     }

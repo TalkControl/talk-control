@@ -5,6 +5,7 @@ import type { Server as HttpServer } from 'http';
 import { isValidSessionId, sessionRoom } from '@services/session';
 import { config } from '@services/config';
 import { buildCorsOptions } from '@services/cors';
+import type { PayloadFor } from '@event-bus/events';
 
 export class EventBusWebsocketsServer extends EventBus {
     sockets: Socket[] = [];
@@ -53,22 +54,26 @@ export class EventBusWebsocketsServer extends EventBus {
         next();
     };
 
-    onMultiple(key: string, callback: EventCallback | null, socket?: Socket): void {
+    onMultiple<K extends string>(key: K, callback: EventCallback<PayloadFor<K>> | null, socket?: Socket): void {
         if (callback) {
             super.onMultiple(key, callback);
         }
         const socketCallback = (message: unknown, emitter: Socket) => {
             this.currentSessionId = emitter.data?.sessionId;
-            this.broadcast(key, message, false);
+            // message provient du socket (wire, non typé) : plomberie socket.io interne,
+            // pas un cast de payload métier (IMP-007).
+            this.broadcast(key, message as PayloadFor<K>, false);
         };
+        // socket.io type ses events réservés via son propre générique ; il ne peut pas s'unifier
+        // avec notre K encore ouvert ici (plomberie interne, pas un cast de payload métier — IMP-007).
         if (socket) {
-            socket.on(key, (...data: unknown[]) => socketCallback(data.find(elem => !!elem) ?? socket, socket));
+            socket.on(key as string, (...data: unknown[]) => socketCallback(data.find(elem => !!elem) ?? socket, socket));
         } else {
-            this.sockets.forEach(s => s.on(key, (...data: unknown[]) => socketCallback(data.find(elem => !!elem) ?? s, s)));
+            this.sockets.forEach(s => s.on(key as string, (...data: unknown[]) => socketCallback(data.find(elem => !!elem) ?? s, s)));
         }
     }
 
-    on(key: string, callback: EventCallback, socket?: Socket): void {
+    on<K extends string>(key: K, callback: EventCallback<PayloadFor<K>>, socket?: Socket): void {
         try {
             super.on(key, callback);
             this.onMultiple(key, callback, socket);
@@ -77,7 +82,7 @@ export class EventBusWebsocketsServer extends EventBus {
         }
     }
 
-    broadcast(key: string, data?: unknown, broadcastToSockets = true): void {
+    broadcast<K extends string>(key: K, data?: PayloadFor<K>, broadcastToSockets = true): void {
         super.broadcast(key, data);
 
         if (broadcastToSockets) {
@@ -91,7 +96,7 @@ export class EventBusWebsocketsServer extends EventBus {
         }
     }
 
-    emitTo(key: string, data: unknown, socket: Socket): void {
+    emitTo<K extends string>(key: K, data: PayloadFor<K>, socket: Socket): void {
         try {
             super.emitTo(key, data, socket);
         } catch (e) {

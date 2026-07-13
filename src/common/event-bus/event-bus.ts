@@ -1,13 +1,15 @@
+import type { PayloadFor } from './events';
+
 export const NO_KEY_PROVIDED = 'No key provided';
 export const NO_TARGET_PROVIDED = 'No socket or window provided';
 export const DUPLICATE_CALLBACKS_ENTRY = 'Duplicate entry in callbacks';
 
-export type EventCallback = (data: unknown) => void;
+export type EventCallback<T = unknown> = (data: T) => void;
 
 export class EventBus {
     callBacks: Record<string, EventCallback[]> = {};
 
-    onMultiple(key: string, callback: EventCallback): void {
+    onMultiple<K extends string>(key: K, callback: EventCallback<PayloadFor<K>>): void {
         if (!key) {
             throw new Error(NO_KEY_PROVIDED);
         }
@@ -16,10 +18,10 @@ export class EventBus {
             arrayCallback = [];
             this.callBacks[key] = arrayCallback;
         }
-        arrayCallback.push(callback);
+        arrayCallback.push(callback as EventCallback);
     }
 
-    on(key: string, callback: EventCallback): void {
+    on<K extends string>(key: K, callback: EventCallback<PayloadFor<K>>): void {
         if (!key) {
             throw new Error(NO_KEY_PROVIDED);
         }
@@ -28,10 +30,10 @@ export class EventBus {
             throw new Error(DUPLICATE_CALLBACKS_ENTRY);
         }
 
-        this.callBacks[key] = [callback];
+        this.callBacks[key] = [callback as EventCallback];
     }
 
-    broadcast(key: string, data?: unknown): void {
+    broadcast<K extends string>(key: K, data?: PayloadFor<K>): void {
         if (!key) {
             throw new Error(NO_KEY_PROVIDED);
         }
@@ -48,7 +50,7 @@ export class EventBus {
         });
     }
 
-    emitTo(key: string, data: unknown, target: unknown): void {
+    emitTo<K extends string>(key: K, data: PayloadFor<K>, target: unknown): void {
         if (!key) {
             throw new Error(NO_KEY_PROVIDED);
         }
