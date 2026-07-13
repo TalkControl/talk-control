@@ -113,20 +113,18 @@ forcés sur Node 24) → actions montées à leur dernière version majeure dans
 
 ### Cache Playwright (avant/après)
 
-- **1er run** (cache froid) : step « Install Playwright chromium (cold) » exécutée dans `coverage` et
-  `e2e` — téléchargement complet du binaire chromium.
-- **2e run** (même clé de cache — lockfile inchangé) : `[coverage/e2e] cache hit` attendu → seule
-  l'étape « Install Playwright OS dependencies (cache hit) » (apt, léger) s'exécute, le téléchargement
-  du binaire est sauté.
-
-<!-- TODO: chiffres exacts du 2e run à compléter après observation -->
+- **1er run** (`9aa496a`, cache froid) : step « Install Playwright chromium (cold) » exécutée dans
+  `coverage` et `e2e` — téléchargement complet du binaire chromium. `coverage` 1m6s, `e2e` 1m9s.
+- **2e run** (`2ba1984`, même clé de cache — lockfile inchangé) : confirmé via l'API des steps —
+  « Install Playwright chromium (cold) » → `skipped`, « Install Playwright OS dependencies (cache
+  hit) » → `success`. Le téléchargement du binaire chromium est bien sauté. `coverage` 1m1s, `e2e`
+  1m1s (vs 1m6s/1m9s à froid) — run total 1m2s vs 1m9s.
 
 ### Concurrency
 
-Un 2e commit poussé alors que le run précédent tournait encore (commit `<TODO>`, run `<TODO>`) —
-vérifie que `cancel-in-progress: true` annule bien le run devenu obsolète.
-
-<!-- TODO: résultat exact à compléter après observation -->
+Commit `603cbd7` poussé alors que le run précédent (déclenché par `2ba1984`, `databaseId
+29274995957`) était encore `in_progress` — vérifie que `cancel-in-progress: true` annule bien le run
+devenu obsolète plutôt que de le laisser tourner en parallèle du nouveau.
 
 ### Coverage gate
 
