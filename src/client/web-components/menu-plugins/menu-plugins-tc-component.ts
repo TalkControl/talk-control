@@ -1,24 +1,17 @@
-import { EventBusComponent } from '@event-bus/event-bus-component';
+import { TCComponentWrapper } from '@event-bus/tc-component-wrapper';
 
 interface MenuPluginsHost {
     addItemToMenu(pluginName: string): void;
     showMenu(): void;
 }
 
-export class MenuPluginsTCComponent extends EventBusComponent {
-    menuPlugins: MenuPluginsHost;
-
-    constructor(menuPlugins: MenuPluginsHost) {
-        super();
-        this.menuPlugins = menuPlugins;
-    }
-
+export class MenuPluginsTCComponent extends TCComponentWrapper<MenuPluginsHost> {
     override init(): void {
         this.controllerComponentChannel.on('addToPluginsMenu', (data: unknown) => {
             const { pluginName } = data as { pluginName: string };
-            this.menuPlugins.addItemToMenu(pluginName);
+            this.host.addItemToMenu(pluginName);
         });
-        this.controllerComponentChannel.on('deactivatePlugin', () => this.menuPlugins.showMenu());
+        this.controllerComponentChannel.on('deactivatePlugin', () => this.host.showMenu());
     }
 
     startPlugin(pluginName: string): void {

@@ -1,38 +1,33 @@
+import { customElement, query } from 'lit/decorators.js';
 import { MenuPluginsTCComponent } from './menu-plugins-tc-component';
-import { TcStyledWithFaElement } from '@compat/lit-styles-compat';
-import { html, css } from 'lit-element';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
+import { DropdownMenuElement } from '@client/web-components/shared/dropdown-menu-element';
+import { html, css } from 'lit';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { icon } from '@fortawesome/fontawesome-svg-core';
 import { faCube } from '@fortawesome/free-solid-svg-icons';
 
-class MenuPluginsComponent extends TcStyledWithFaElement {
+@customElement('tc-menu-plugins')
+export class MenuPluginsComponent extends DropdownMenuElement {
+    @query('#closeButton') closeButton!: HTMLElement;
+    @query('#pluginsList') pluginsList!: HTMLElement;
+
     menuPluginsTcComponent!: MenuPluginsTCComponent;
     itemTitle: string = '';
 
-    static get properties() {
-        return {};
-    }
-
-    static get styles() {
-        return [
-            css`
-                #closeButton {
-                    display: none;
-                }
-            `
-        ];
-    }
+    static styles = css`
+        #closeButton {
+            display: none;
+        }
+    `;
 
     firstUpdated(): void {
-        this.shadowRoot!.getElementById('menuButton')!.addEventListener('click', () => {
-            this.shadowRoot!.getElementById('menuDropdown')!.classList.toggle('is-active');
-        });
+        this._initDropdownToggle();
         this.menuPluginsTcComponent = new MenuPluginsTCComponent(this);
-        this.shadowRoot!.getElementById('closeButton')!.addEventListener('click', () => this.closeButtonClick());
+        this.closeButton.addEventListener('click', () => this.closeButtonClick());
     }
 
     addItemToMenu(itemTitle: string): void {
-        const pluginsList = this.shadowRoot!.getElementById('pluginsList')!;
+        const pluginsList = this.pluginsList;
 
         // The server re-broadcasts the plugins list to every connected client whenever
         // any client (re)initializes (e.g. presenter + on-stage both connected), so this
@@ -63,14 +58,14 @@ class MenuPluginsComponent extends TcStyledWithFaElement {
     }
 
     showMenu(): void {
-        (this.shadowRoot!.getElementById('closeButton') as HTMLElement).style.display = 'none';
-        (this.shadowRoot!.getElementById('menuDropdown') as HTMLElement).style.display = 'inline-flex';
+        this.closeButton.style.display = 'none';
+        this.menuDropdown.style.display = 'inline-flex';
     }
 
     _showCloseButton(): void {
-        this.shadowRoot!.getElementById('menuDropdown')!.classList.toggle('is-active');
-        (this.shadowRoot!.getElementById('menuDropdown') as HTMLElement).style.display = 'none';
-        (this.shadowRoot!.getElementById('closeButton') as HTMLElement).style.display = 'inline-flex';
+        this.menuDropdown.classList.toggle('is-active');
+        this.menuDropdown.style.display = 'none';
+        this.closeButton.style.display = 'inline-flex';
     }
 
     render() {
@@ -90,5 +85,3 @@ class MenuPluginsComponent extends TcStyledWithFaElement {
         `;
     }
 }
-
-customElements.define('tc-menu-plugins', MenuPluginsComponent);

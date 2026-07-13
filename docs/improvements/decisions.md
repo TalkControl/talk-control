@@ -304,11 +304,40 @@ timer, notes `message is-light`).
 
 ## IMP-006 — Migration lit-element → lit + décorateurs
 
-**Étape :** 10 | **Statut :** ⬜
+**Étape :** 10 | **Statut :** ✅ (branche `feat/step-10-lit`, à relire avant merge)
 
-### Décision (à confirmer)
-Package `lit` unique, décorateurs standards (pas `experimentalDecorators`), classe de base commune pour les
-wrappers, factorisation `formatTime`/dropdown. Migration composant par composant.
+### Décision
+Package `lit` 3.3.3 unique. **Décorateurs LEGACY** (`experimentalDecorators: true`), pas standards —
+déviation du plan initial, voir « Surprise » ci-dessous. `useDefineForClassFields: false` (tsconfig)
+requis dans les deux modes pour éviter que le champ de classe n'écrase l'accesseur réactif généré par
+le décorateur. Migration composant par composant (13 composants, 1 commit chacun), puis 3 factorisations
+(`formatTime`, dropdown, wrappers `*-tc-component.ts`).
+
+### Surprise — décorateurs standards inexécutables avec la stack actuelle
+Testé sur le composant pilote (`timer.ts`) avant propagation, comme prévu par le plan : les décorateurs
+standards TC39 typent correctement sous `tsc`, mais le transform `oxc` de Vite 8/Rolldown ne les lowere
+pas (il les laisse tels quels dans le JS servi, pariant sur un support natif du runtime) et Chromium 149
+(Playwright 1.61.1) ne supporte nativement aucune forme de décorateur — `SyntaxError` à l'exécution, y
+compris avec le mot-clé `accessor` qu'exige `@query` en mode standard. Les décorateurs legacy, eux, sont
+correctement lowerés par `oxc` (helper `_decorate`). Décision : legacy partout, à réévaluer si oxc ajoute
+le lowering des décorateurs standards ou si les navigateurs cibles les supportent nativement.
+
+### Divergence — wrappers `*-tc-component.ts`
+Le plan comptait « 8 sous-classes d'EventBusComponent, quasi identiques (host + init) ». En réalité 8
+sous-classes existent bien (`TCComponent` dans `client/tc-component/tc-component.ts` en est une, sans le
+suffixe `-tc-component`), mais seules 5 suivent ce pattern (`loader-`, `notes-`, `timer-`, `menu-plugins-`,
+`slide-view-tc-component.ts`) — désormais sur une base commune `TCComponentWrapper<Host>`. Les wrappers
+touch-pointer ne stockent aucun host, et `TCComponent` a un constructeur structurellement différent
+(engine/delta/shadowRoot) : forcer les 3 dans la base commune aurait été artificiel, laissés inchangés.
+
+### Conséquences
+- `this as any` de `slide-view-tc-component.ts` (noté à l'étape 07) résolu via l'interface `TCComponentHost`
+  (`controllerComponentChannel` seul), qui remplace `TCComponent` comme type de paramètre de
+  `pluginService.activateOnComponent`.
+- Aucune régression fonctionnelle : `tsc`, lint, 380 tests unitaires, 27 tests composants, 35 tests e2e
+  (cache Vite propre — un cache pollué par les essais décorateurs standards a fait échouer 11 scénarios
+  avec `Unexpected token 'export'`, non lié au code final), build, audit 0. Vérification manuelle notes/
+  touch-pointer/multi-vues (hors couverture e2e profonde) : OK.
 
 ---
 

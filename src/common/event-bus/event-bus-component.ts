@@ -1,7 +1,17 @@
 import { Channels, EventBusResolver } from '@event-bus/event-bus-resolver';
 import type { EventBus } from '@event-bus/event-bus';
 
-export class EventBusComponent {
+/**
+ * Contrat minimal attendu par pluginService.activateOnComponent : seul
+ * controllerComponentChannel est utilisé, ce qui permet à n'importe quel
+ * EventBusComponent (pas seulement TCComponent) de servir de composant hôte
+ * pour un plugin (cf. slide-view-tc-component.ts).
+ */
+export interface TCComponentHost {
+    controllerComponentChannel: EventBus;
+}
+
+export class EventBusComponent implements TCComponentHost {
     controllerComponentChannel: EventBus;
 
     constructor() {

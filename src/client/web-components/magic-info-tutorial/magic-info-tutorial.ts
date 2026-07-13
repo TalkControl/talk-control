@@ -1,19 +1,17 @@
+import { customElement } from 'lit/decorators.js';
 import { TcStyledElement } from '@compat/lit-styles-compat';
-import { html, css } from 'lit-element';
+import { html, css } from 'lit';
 import presentationService from '@services/presentation';
 
-class MagicModeTutorialComponent extends TcStyledElement {
-    static get styles() {
-        return [
-            css`
-                .content {
-                    position: relative;
-                    height: 100%;
-                    padding: 0.5rem;
-                }
-            `
-        ];
-    }
+@customElement('tc-magic-info')
+export class MagicModeTutorialComponent extends TcStyledElement {
+    static styles = css`
+        .content {
+            position: relative;
+            height: 100%;
+            padding: 0.5rem;
+        }
+    `;
 
     firstUpdated(): void {
         this.shadowRoot!.querySelector('#startMagicModeButton')!.addEventListener('click', this.startMagicMode);
@@ -68,5 +66,3 @@ window.tcResourcePath = 'http://localhost:3000/'
         `;
     }
 }
-
-customElements.define('tc-magic-info', MagicModeTutorialComponent);

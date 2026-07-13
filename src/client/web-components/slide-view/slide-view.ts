@@ -1,49 +1,33 @@
+import { customElement, property, query } from 'lit/decorators.js';
 import { SlideViewTCComponent } from './slide-view-tc-component';
 import { TcStyledElement } from '@compat/lit-styles-compat';
-import { html, css } from 'lit-element';
+import { html, css } from 'lit';
 
-class SlideViewComponent extends TcStyledElement {
-    declare url: string;
-    declare delta: string;
-    declare fullscreen: boolean;
-    declare _focus: boolean;
+@customElement('tc-slide')
+export class SlideViewComponent extends TcStyledElement {
+    @property({ type: String, reflect: true }) url!: string;
+    @property({ type: String, reflect: true }) delta = '0';
+    @property({ type: Boolean, reflect: true }) fullscreen!: boolean;
+    @property({ type: Boolean, attribute: 'focus' }) _focus!: boolean;
+
+    @query('iframe') frame!: HTMLIFrameElement;
     slideViewTcComponent!: SlideViewTCComponent;
-    frame!: HTMLIFrameElement;
 
-    constructor() {
-        super();
-        this.delta = '0';
-    }
-
-    static get properties() {
-        return {
-            url: { type: String, reflect: true, attribute: true },
-            delta: { type: String, reflect: true, attribute: true },
-            _focus: { type: Boolean, attribute: 'focus' },
-            fullscreen: { type: Boolean, reflect: true, attribute: true }
-        };
-    }
-
-    static get styles() {
-        return [
-            css`
-                iframe,
-                section {
-                    position: relative;
-                    width: 100%;
-                    height: 100%;
-                }
-                section.fullscreen {
-                    width: 100vw;
-                    height: 100vh;
-                }
-            `
-        ];
-    }
+    static styles = css`
+        iframe,
+        section {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        section.fullscreen {
+            width: 100vw;
+            height: 100vh;
+        }
+    `;
 
     firstUpdated(): void {
         this.slideViewTcComponent = new SlideViewTCComponent(this);
-        this.frame = this.shadowRoot!.querySelector('iframe')!;
         if (this._focus) {
             this._bindFocus();
         }
@@ -84,5 +68,3 @@ class SlideViewComponent extends TcStyledElement {
         `;
     }
 }
-
-customElements.define('tc-slide', SlideViewComponent);

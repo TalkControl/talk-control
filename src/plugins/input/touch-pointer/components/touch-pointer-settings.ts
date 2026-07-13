@@ -1,45 +1,28 @@
-import { html, css, PropertyValues } from 'lit-element';
+import { customElement, property } from 'lit/decorators.js';
+import { html, css, PropertyValues } from 'lit';
 import { TouchPointerSettingsTCComponent } from './touch-pointer-settings-tc-component';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 
-class TouchPointerSettingsComponent extends TcStyledElement {
-    // `declare` (not plain class fields) is required here: with this project's ES2022
-    // target, useDefineForClassFields shadows Lit's reactive property accessors and
-    // silently breaks rendering entirely (see slide-view.ts for the same pattern).
-    declare pointerColor: string;
-    declare touchPointerSettingsTCComponent: TouchPointerSettingsTCComponent;
+@customElement('tc-touch-pointer-settings')
+export class TouchPointerSettingsComponent extends TcStyledElement {
+    @property({ type: String }) pointerColor = '#FF00000';
+    @property({ type: Object }) touchPointerSettingsTCComponent!: TouchPointerSettingsTCComponent;
 
-    constructor() {
-        super();
-        this.pointerColor = '#FF00000';
-    }
-
-    static get styles() {
-        return [
-            css`
-                :host {
-                    --size-button: 40px;
-                }
-                .colorButton {
-                    width: var(--size-button);
-                    height: var(--size-button);
-                    border-radius: var(--size-button);
-                    box-shadow: 5px 5px 5px 0 #c0c0c0;
-                }
-                #captionArea ol {
-                    margin-left: 2rem;
-                    padding: 0 0 1rem 0;
-                }
-            `
-        ];
-    }
-
-    static get properties() {
-        return {
-            pointerColor: { type: String },
-            touchPointerSettingsTCComponent: { type: Object }
-        };
-    }
+    static styles = css`
+        :host {
+            --size-button: 40px;
+        }
+        .colorButton {
+            width: var(--size-button);
+            height: var(--size-button);
+            border-radius: var(--size-button);
+            box-shadow: 5px 5px 5px 0 #c0c0c0;
+        }
+        #captionArea ol {
+            margin-left: 2rem;
+            padding: 0 0 1rem 0;
+        }
+    `;
 
     override firstUpdated(_changedProperties: PropertyValues): void {
         super.firstUpdated(_changedProperties);
@@ -83,5 +66,3 @@ class TouchPointerSettingsComponent extends TcStyledElement {
         });
     }
 }
-
-customElements.define('tc-touch-pointer-settings', TouchPointerSettingsComponent);

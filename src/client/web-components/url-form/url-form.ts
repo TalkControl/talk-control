@@ -1,15 +1,22 @@
+import { customElement, query } from 'lit/decorators.js';
 import config from '@config/config.json';
-import { html } from 'lit-element';
+import { html } from 'lit';
 import { isValidUrl } from '@services/url';
 import contextService from '@services/context';
 import { TcStyledElement } from '@compat/lit-styles-compat';
 
-class UrlFormComponent extends TcStyledElement {
+@customElement('tc-url-form')
+export class UrlFormComponent extends TcStyledElement {
+    @query('#presentationUrl') presentationUrl!: HTMLInputElement;
+    @query('#validateButton') validateButton!: HTMLElement;
+    @query('#updateButton') updateButton!: HTMLElement;
+    @query('#urlError') urlError!: HTMLElement;
+
     firstUpdated(): void {
-        const presentationUrl = this.shadowRoot!.getElementById('presentationUrl') as HTMLInputElement;
-        const validateButton = this.shadowRoot!.getElementById('validateButton')!;
-        const updateButton = this.shadowRoot!.getElementById('updateButton')!;
-        const urlError = this.shadowRoot!.getElementById('urlError')!;
+        const presentationUrl = this.presentationUrl;
+        const validateButton = this.validateButton;
+        const updateButton = this.updateButton;
+        const urlError = this.urlError;
 
         presentationUrl.addEventListener('keypress', e => {
             const key = (e as KeyboardEvent).which || (e as KeyboardEvent).keyCode;
@@ -39,15 +46,15 @@ class UrlFormComponent extends TcStyledElement {
         };
 
         const switchToEdition = () => {
-            (this.shadowRoot!.getElementById('updateButton') as HTMLElement).classList.add('is-hidden');
-            (this.shadowRoot!.getElementById('validateButton') as HTMLElement).classList.remove('is-hidden');
-            (this.shadowRoot!.getElementById('presentationUrl') as HTMLInputElement).disabled = false;
+            updateButton.classList.add('is-hidden');
+            validateButton.classList.remove('is-hidden');
+            presentationUrl.disabled = false;
         };
 
         const switchToReadOnly = () => {
-            (this.shadowRoot!.getElementById('validateButton') as HTMLElement).classList.add('is-hidden');
-            (this.shadowRoot!.getElementById('updateButton') as HTMLElement).classList.remove('is-hidden');
-            (this.shadowRoot!.getElementById('presentationUrl') as HTMLInputElement).disabled = true;
+            validateButton.classList.add('is-hidden');
+            updateButton.classList.remove('is-hidden');
+            presentationUrl.disabled = true;
         };
 
         const hideUrlError = () => urlError.classList.add('is-hidden');
@@ -79,7 +86,7 @@ class UrlFormComponent extends TcStyledElement {
                     </div>
                     <!-- Error message area -->
                     <div id="urlError" class="notification is-danger is-hidden">
-                        <button class="delete" @click="${() => this.shadowRoot!.getElementById('urlError')!.classList.add('is-hidden')}"></button>
+                        <button class="delete" @click="${() => this.urlError.classList.add('is-hidden')}"></button>
                         URL is not valid
                     </div>
                 </div>
@@ -87,5 +94,3 @@ class UrlFormComponent extends TcStyledElement {
         `;
     }
 }
-
-customElements.define('tc-url-form', UrlFormComponent);

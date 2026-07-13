@@ -1,19 +1,16 @@
-import { EventBusComponent } from '@event-bus/event-bus-component';
+import { TCComponentWrapper } from '@event-bus/tc-component-wrapper';
 import pluginService from '@services/plugin';
 
 interface SlideViewHost {
     url: unknown;
 }
 
-export class SlideViewTCComponent extends EventBusComponent {
-    slideView: SlideViewHost;
-
+export class SlideViewTCComponent extends TCComponentWrapper<SlideViewHost> {
     constructor(slideView: SlideViewHost) {
-        super();
-        this.slideView = slideView;
+        super(slideView);
 
         this.controllerComponentChannel.on('loadPresentation', url => {
-            this.slideView.url = url;
+            this.host.url = url;
             this.controllerComponentChannel.broadcast('presentationLoading');
         });
     }
@@ -21,11 +18,7 @@ export class SlideViewTCComponent extends EventBusComponent {
     override init(): void {
         this.controllerComponentChannel.on('activatePlugin', (data: unknown) => {
             const { pluginName } = data as { pluginName: string };
-
-            // SlideViewTCComponent doesn't extend TCComponent (no engine/delta/shadowRoot) — the
-            // structural gap belongs to the component hierarchy unification tracked in étape 11.
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            pluginService.activateOnComponent(pluginName, this as any);
+            pluginService.activateOnComponent(pluginName, this);
         });
     }
 
