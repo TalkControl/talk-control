@@ -14,7 +14,7 @@ export default {
             '/developers/': [{ text: 'Developer Guide', link: '/developers/' }],
         },
         editLink: {
-            pattern: 'https://github.com/sfeir-open-source/talk-control/edit/develop/docs-sources/:path',
+            pattern: 'https://github.com/TalkControl/talk-control/edit/develop/docs-sources/:path',
         },
         sidebarMenuLabel: 'Menu',
     },

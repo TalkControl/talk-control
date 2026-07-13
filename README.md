@@ -1,9 +1,9 @@
 # TalkControl
 
-![version](https://img.shields.io/github/package-json/v/sfeir-open-source/talk-control?color=blue)
-![license](https://img.shields.io/github/license/sfeir-open-source/talk-control)
-![open issues](https://img.shields.io/github/issues-raw/sfeir-open-source/talk-control)
-![CI develop](https://github.com/sfeir-open-source/talk-control/actions/workflows/develop.yml/badge.svg?branch=develop)
+![version](https://img.shields.io/github/package-json/v/TalkControl/talk-control?color=blue)
+![license](https://img.shields.io/github/license/TalkControl/talk-control)
+![open issues](https://img.shields.io/github/issues-raw/TalkControl/talk-control)
+![CI develop](https://github.com/TalkControl/talk-control/actions/workflows/develop.yml/badge.svg?branch=develop)
 
 TalkControl lets speakers remotely control their slideshow from any device — phone, tablet, or second screen — via a web interface synchronized with the presentation.
 
@@ -15,7 +15,7 @@ TalkControl lets speakers remotely control their slideshow from any device — p
 ## Getting started
 
 ```bash
-npm install --legacy-peer-deps
+npm install
 npm start
 ```
 
@@ -96,7 +96,7 @@ npm run docs:build  # Build static docs
 ## Contribute
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and pull request guidelines.
-Issues: [github.com/sfeir-open-source/talk-control/issues](https://github.com/sfeir-open-source/talk-control/issues)
+Issues: [github.com/TalkControl/talk-control/issues](https://github.com/TalkControl/talk-control/issues)
 
 ## Troubleshoot
 
