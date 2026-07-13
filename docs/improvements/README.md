@@ -92,7 +92,7 @@ Garde-fous quel que soit le modèle : exécuter réellement les 6 commandes de v
 
 | Étape | Statut | Contenu |
 |---|---|---|
-| [15 — Gaps de tests](step-15-test-gaps.md) | ⬜ | Modules non testés, helpers factorisés, seuils remontés, doc coverage régénérée |
+| [15 — Gaps de tests](step-15-test-gaps.md) | ✅ | Modules non testés comblés (plugin.ts, tc-controller, touch-pointer, wrappers, server/bootstrap), helpers factorisés (`test/helpers/dom.ts`), seuils remontés (80/90/70/80), `changeSlide` mort supprimé (IMP-012), doc coverage régénérée |
 | [16 — CI refonte](step-16-ci.md) | ⬜ | Lint bloquant, caches Playwright, concurrency, dédup jobs, déploiement docs |
 
 ### Phase F — Agentic
