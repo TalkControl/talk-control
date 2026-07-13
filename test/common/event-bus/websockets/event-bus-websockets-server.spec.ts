@@ -235,10 +235,10 @@ describe('EventBusWebsocketsServer', function () {
             eventBus.on('inputEvent', () => {});
             // When — réception du message puis broadcast sortant (même échange synchrone)
             handlers['inputEvent']({ key: 'arrow' });
-            eventBus.broadcast('gotoSlide', { slide: 1 });
+            eventBus.broadcast('gotoSlide', { slide: { h: 0, v: 0, f: 1, fMax: -1 } });
             // Then — l'émission sort dans la room de la session, pas globalement
             expect(toSpy).toHaveBeenCalledWith(`session:${VALID_UUID}`);
-            expect(roomEmit).toHaveBeenCalledWith('gotoSlide', { slide: 1 });
+            expect(roomEmit).toHaveBeenCalledWith('gotoSlide', { slide: { h: 0, v: 0, f: 1, fMax: -1 } });
             toSpy.mockRestore();
         });
     });
