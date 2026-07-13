@@ -86,7 +86,7 @@ Garde-fous quel que soit le modèle : exécuter réellement les 6 commandes de v
 | [11 — Event-bus typé](step-11-typed-event-bus.md) | ✅ | `TcEventMap` (21 events), `on`/`broadcast`/`emitTo` génériques sur `PayloadFor<K>` (voir IMP-007), -12 casts de consommation |
 | [12 — Redux → store minimal](step-12-remove-redux.md) | ✅ | Store typé maison (voir IMP-008), suppression de redux/redux-logger/redux-mock-store, -3 casts |
 | [13 — Moteur serveur](step-13-server-engine.md) | ✅ | handleTouch supprimé (code mort, IMP-009), fixes datés (keypressed, keyCode, innerHTML, logger) |
-| [14 — Plugins auto-découverts](step-14-plugin-discovery.md) | ⬜ | `import.meta.glob` à la place du switch codé en dur |
+| [14 — Plugins auto-découverts](step-14-plugin-discovery.md) | ✅ | `import.meta.glob` à la place du switch codé en dur (IMP-010) |
 
 ### Phase E — Tests & CI
 
