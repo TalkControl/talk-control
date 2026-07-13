@@ -1,16 +1,16 @@
 import '../../../src/client/web-components/slide-view/slide-view';
+import type { SlideViewComponent } from '../../../src/client/web-components/slide-view/slide-view';
+import { mountComponent, cleanupDom } from '../../helpers/dom';
 
 describe('tc-slide', () => {
-    let el: HTMLElement;
+    let el: SlideViewComponent;
 
     beforeEach(async () => {
-        el = document.createElement('tc-slide');
-        document.body.appendChild(el);
-        await (el as any).updateComplete;
+        el = await mountComponent<SlideViewComponent>('tc-slide');
     });
 
     afterEach(() => {
-        document.body.innerHTML = '';
+        cleanupDom();
     });
 
     it('a un shadowRoot avec <section> et <iframe>', () => {
@@ -40,8 +40,8 @@ describe('tc-slide', () => {
     });
 
     it('prop fullscreen → section a la classe fullscreen', async () => {
-        (el as any).fullscreen = true;
-        await (el as any).updateComplete;
+        el.fullscreen = true;
+        await el.updateComplete;
         expect(el.shadowRoot!.querySelector('section')!.classList.contains('fullscreen')).toBe(true);
     });
 });

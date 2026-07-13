@@ -15,6 +15,12 @@ export default defineConfig({
         },
         globals: true,
         include: ['test/client/web-components/**/*.spec.ts'],
-        setupFiles: ['./test/client/web-components/setup.ts']
+        setupFiles: ['./test/client/web-components/setup.ts'],
+        coverage: {
+            provider: 'v8',
+            all: false,
+            include: ['src/**/*.ts'],
+            exclude: ['src/client/layouts/**', 'src/environment/**']
+        }
     }
 });

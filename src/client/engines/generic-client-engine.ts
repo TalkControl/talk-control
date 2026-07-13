@@ -12,6 +12,4 @@ export class GenericEngine {
     getSlideNotes(): unknown {
         return null;
     }
-
-    changeSlide(_delta: number): void {}
 }

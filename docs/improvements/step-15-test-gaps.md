@@ -67,3 +67,84 @@ npm run coverage          # nouveaux seuils respectés avec marge
 - Les e2e de l'étape 01 couvrent déjà les parcours ; ici on cible l'**unitaire** des modules isolés, pas de
   la redite e2e.
 - Remonter les seuils **après** avoir couvert, jamais l'inverse (sinon la CI bloque le reste du plan).
+
+## Résultats de validation (2026-07-13, branche `test/step-15-test-gaps`)
+
+### Écarts constatés avec le plan avant exécution (audit repris post-étape 14)
+
+Le plan datait de l'audit initial (outillage c8, avant les étapes 06-14) — plusieurs constats
+étaient devenus faux ou partiels une fois vérifiés sur le code réel :
+
+- Couverture réelle mergée (jsdom+navigateur) en tout début d'étape : 85.39 % / 90.59 % / 71.9 % /
+  86.33 % (Stmts/Branches/Funcs/Lines) — déjà très au-dessus du `70.55 %` cité par le plan.
+- `common/event-bus/event-bus-component.ts`, `event-bus-proxy.ts` et les services
+  `config/context/cors/logger/presentation/session/url` étaient **déjà** entièrement testés (item 1
+  du plan partiellement obsolète) — seul `common/services/plugin.ts` avait un vrai gap partiel
+  (lignes 12 et 23).
+- Les 7 composants réellement smoke-only étaient bien clock/loader/magic-info-tutorial/
+  menu-navigation/notes/remote-control/view-selector (item 4 confirmé) — mais les wrappers
+  `*-tc-component.ts` (timer-/loader-/menu-plugins-/notes-/slide-view-) n'étaient **pas** couverts
+  par leur classe de base commune comme le supposait le plan : chacun surcharge `init()` avec un
+  corps spécifique jamais exercé (funcs 0-33 %).
+- `client/engines/generic-client-engine.ts` (0 %) posait le même arbitrage qu'IMP-009 : la plupart
+  des méthodes de `GenericEngine` sont réellement atteignables (fallback `EngineResolver` quand
+  `engineName` est inconnu), mais `changeSlide()` s'est révélé être du code mort sans aucun
+  appelant — tranché et documenté en IMP-012.
+- `server/index.ts` (0 %, 1 ligne `bootstrapTcServer();`) : jugé disproportionné à tester
+  (test-tautologie), gap accepté et documenté plutôt que forcé.
+- `compat/` était déjà à 100 % et `environment/` déjà exclu du dénominateur — les deux points du
+  plan à ce sujet n'ont nécessité aucune action.
+
+### Actions réalisées
+
+1. `common/services/plugin.ts` : 2 tests ajoutés (callback `on('type', ...)` invoqué, catch de
+   `activateOnController`) → 100 % sur les 4 métriques.
+2. `client/tc-controller/bootstrap.ts` (0 % → couvert), `client/tc-controller/index.ts` (0 % →
+   couvert, pattern DOMContentLoaded réutilisé de `test/client/tc-component/index.spec.ts`),
+   `client/engines/engine-resolver.ts` (branche `default` couverte, 100 %).
+3. Les 4 composants touch-pointer : 2 wrappers `EventBusComponent` testés en jsdom
+   (`test/plugins/input/touch-pointer/components/`), 2 composants Lit testés en mode navigateur
+   réel (`test/client/web-components/touch-pointer-{mask,settings}.spec.ts`).
+4. Les 5 wrappers `*-tc-component.ts` : surcharge `init()`/`error()` testée directement par
+   instanciation avec un host mocké (`test/client/wrappers/`), pas via la base commune.
+5. `server/bootstrap.ts` : chaîne complète testée (express → router.init → http.Server →
+   `new TCServer().init('revealjs')` → `listen(port)`) avec mocks explicites (pas d'automock —
+   `vi.mock('@server/router')` en automock aurait réimporté et exécuté les vrais controllers).
+6. `GenericEngine.changeSlide()` supprimé (code mort, IMP-012), les 4 autres méthodes couvertes.
+7. Helpers `test/helpers/dom.ts` créés (`mountComponent<T>`, `cleanupDom`, `resetPluginInstance`) et
+   les 5 duplications identifiées remplacées (timer/menu-plugins/slide-view/url-form/smoke.spec.ts +
+   touch-pointer/index.spec.ts).
+8. Les 15 `(el as any)` de `test/client/web-components/*.spec.ts` éliminés via `mountComponent<T>`
+   typé sur la classe Lit concrète (import `type` + import side-effect séparé, cf. piège ci-dessous).
+9. Seuils `vitest.config.ts` remontés : `{ lines: 70→80, statements: 70→80, branches: 90 (inchangé),
+   functions: 60→70 }`. `vitest.browser.config.ts` a reçu un bloc `coverage` (absent avant) pour
+   éviter que `test/helpers/**` ne pollue le dénominateur du rapport mergé.
+10. `docs/improvements/coverage-2026.md` créé (remplace la référence à `docs/migration/
+    coverage-final.md` pour l'outillage courant, sans le modifier).
+
+### Piège trouvé en cours d'implémentation : imports type-only et enregistrement de web components
+
+Remplacer `import '.../composant';` (effet de bord, enregistre le custom element) par
+`import { Composant } from '.../composant';` utilisé **uniquement en position de type** (annotation
+de variable, paramètre générique) fait que le compilateur (`oxc`/esbuild, `isolatedModules`) élide
+l'import entier — le custom element n'est alors jamais enregistré, et `document.createElement(tag)`
+ne s'upgrade pas (`shadowRoot` reste `null`, les méthodes du composant sont absentes). Correction :
+garder l'import side-effect (`import '.../composant';`) **et** ajouter un `import type { Composant }
+from '.../composant';` séparé pour le typage — les deux coexistent sans double exécution (le second
+est entièrement effacé à la compilation).
+
+### Résultats
+
+| Commande | Résultat |
+|---|---|
+| `NODE_ENV=test npm test` | 392/392 (47 fichiers) |
+| `npm run test:components` | 35/35 (7 fichiers) |
+| `npm run coverage` | 93.02 % / 90.76 % / 86.57 % / 94.43 % (Stmts/Branches/Funcs/Lines), seuils respectés avec marge réelle (branches reste la plus fine, +0.76 pt, cf. coverage-2026.md) |
+| `npx tsc --noEmit` | 0 erreur |
+| `npm run lint` | 0 erreur |
+| `npm run build` | OK (warning taille de chunk préexistant, sans rapport avec cette étape) |
+| `npm audit` | 0 vulnérabilité |
+| `npm run test:e2e` | 35/35, aucune régression |
+
+Aucun blocage. Branche non mergée, laissée pour relecture (touche des zones hors couverture e2e
+profonde : touch-pointer, wrappers internes — cf. tableau de modèles recommandés du plan).

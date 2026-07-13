@@ -1,5 +1,6 @@
 import { instance } from '@plugins/input/touch-pointer/index.js';
 import { logger } from '@services/logger';
+import { resetPluginInstance } from '../../../helpers/dom';
 
 function buildCurrentSlide(): { host: HTMLElement; shadowRoot: ShadowRoot; frame: HTMLElement; section: HTMLElement } {
     const host = document.createElement('div');
@@ -20,11 +21,7 @@ function messageEvent(data: unknown): MessageEvent {
 
 describe('TouchPointerInput', function () {
     beforeEach(function () {
-        instance.zooming = false;
-        instance.pointer = { x: '0', y: '0', color: '#FF0000' };
-        instance.interval = undefined;
-        instance.messageEventRegistered = false;
-        instance.initialized = false;
+        resetPluginInstance(instance);
         document.body.innerHTML = '';
         document.body.append(
             Object.assign(document.createElement('div'), { id: 'placeholder1' }),

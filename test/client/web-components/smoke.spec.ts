@@ -9,6 +9,7 @@ import '../../../src/client/web-components/slide-view/slide-view';
 import '../../../src/client/web-components/timer/timer';
 import '../../../src/client/web-components/url-form/url-form';
 import '../../../src/client/web-components/view-selector/view-selector';
+import { mountComponent, cleanupDom } from '../../helpers/dom';
 
 const COMPONENTS = [
     'tc-clock',
@@ -26,14 +27,12 @@ const COMPONENTS = [
 
 describe('Smoke tests — web components LitElement', () => {
     afterEach(() => {
-        document.body.innerHTML = '';
+        cleanupDom();
     });
 
     for (const tag of COMPONENTS) {
         it(`${tag} se rend sans crash et a un shadowRoot`, async () => {
-            const el = document.createElement(tag);
-            document.body.appendChild(el);
-            await (el as any).updateComplete;
+            const el = await mountComponent(tag);
             expect(el.shadowRoot).not.toBeNull();
         });
     }

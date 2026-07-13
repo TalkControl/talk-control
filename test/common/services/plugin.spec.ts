@@ -1,4 +1,5 @@
 import { loadPluginModule } from '@plugins/plugin-loader';
+import { logger } from '@services/logger';
 import pluginService from '@services/plugin';
 
 vi.mock('@plugins/plugin-loader');
@@ -35,6 +36,58 @@ describe('Plugin service', function () {
             expect(loadPluginModule).toHaveBeenCalledWith(pluginName);
             expect(params.controllerComponentChannel.on).toHaveBeenCalledWith(pluginInstance.type, expect.any(Function));
             expect(params.controllerComponentChannel.broadcast).toHaveBeenCalledWith('activatePlugin', { pluginName });
+        });
+
+        it('should forward the event to controllerServerChannel when the registered listener fires', async function () {
+            // Given
+            const pluginName = 'pluginName';
+            const pluginInstance = {
+                type: 'type',
+                usedByAComponent: true
+            };
+            const params = {
+                controllerComponentChannel: {
+                    on: vi.fn(),
+                    broadcast: vi.fn()
+                },
+                controllerServerChannel: {
+                    on: vi.fn(),
+                    broadcast: vi.fn()
+                }
+            };
+            vi.mocked(loadPluginModule).mockResolvedValue({ instance: pluginInstance as any });
+
+            // When
+            await pluginService.activateOnController(pluginName, params as any);
+            const registeredListener = params.controllerComponentChannel.on.mock.calls[0][1];
+            registeredListener('someEvent');
+
+            // Then
+            expect(params.controllerServerChannel.broadcast).toHaveBeenCalledWith(pluginInstance.type, 'someEvent');
+        });
+
+        it('should catch error when loadPluginModule rejects', async function () {
+            // Given
+            const pluginName = 'pluginName';
+            const loggerSpy = vi.spyOn(logger, 'log').mockImplementation(() => {});
+            vi.mocked(loadPluginModule).mockRejectedValue(new Error('load error'));
+            const params = {
+                controllerComponentChannel: { on: vi.fn(), broadcast: vi.fn() },
+                controllerServerChannel: { on: vi.fn(), broadcast: vi.fn() }
+            };
+
+            // When - should not throw
+            let threw = false;
+            try {
+                await pluginService.activateOnController(pluginName, params as any);
+            } catch {
+                threw = true;
+            }
+
+            // Then
+            expect(threw).toBe(false);
+            expect(loggerSpy).toHaveBeenCalledWith('Unable to load plugin module', expect.any(Error), true);
+            loggerSpy.mockRestore();
         });
 
         it('should call required functions if plugin is NOT usedByAComponent', async function () {

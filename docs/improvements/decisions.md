@@ -560,3 +560,43 @@ golden-path 14 (menu plugins) vert, audit 0 vulnérabilité.
 ### Décision (à confirmer)
 CLAUDE.md + AGENTS.md + `.claude/settings.json` propre + skill/script de vérification + revue CI automatisée
 avec guidelines encodant les dettes éliminées. KISS : simple et maintenable à 6 mois.
+
+---
+
+## IMP-012 — Sort de `GenericEngine.changeSlide` (bug vs code mort)
+
+**Étape :** 15 | **Statut :** ✅ tranché : code mort, supprimé (2026-07-13, branche `test/step-15-test-gaps`)
+
+### Contexte
+`client/engines/generic-client-engine.ts` était à 0 % de couverture. Avant d'écrire des tests
+« au chiffre », vérification méthode par méthode de l'atteignabilité réelle (même question
+qu'IMP-009 : bug latent vs. code jamais exécuté), plutôt que de supposer que `GenericEngine`
+n'est qu'une base abstraite toujours masquée par `RevealEngine`.
+
+### Constat
+`EngineResolver.getEngine(engineName)` (`client/engines/engine-resolver.ts`) retourne un
+`GenericEngine` nu dès que `engineName` ne vaut pas `'revealjs'` — branche réellement
+atteignable en usage : `TCComponent` construit son moteur depuis `params.engineName`, lui-même
+dérivé des query params de l'URL (`client/tc-component/index.ts`, `parseParams`). Un lien
+`?engineName=xxx` construit donc un vrai `GenericEngine`, dont `init()`, `getSlides()`,
+`goToSlide()` et `getSlideNotes()` sont bien appelés par `TCComponent.init()` — ce ne sont pas
+des overrides jamais exercés, mais le contrat de repli réel du moteur générique.
+
+`changeSlide(_delta)`, en revanche, n'a **aucun appelant nulle part** (`grep -rn changeSlide
+src/ test/` : un seul résultat, sa propre définition) — ni dans `TCComponent`, ni dans
+`RevealEngine` (qui ne le surcharge pas non plus), ni dans aucun plugin. Contrairement à
+`init`/`goToSlide`/`getSlides`/`getSlideNotes`, ce n'est pas un contrat de repli exercé par un
+chemin réel : personne n'invoque jamais cette méthode, y compris via le fallback
+`GenericEngine` nu.
+
+### Décision
+**Code mort, supprimé** — même verdict qu'IMP-009 (`handleTouch`), même critère : zéro appelant
+recensé, aucun vocabulaire d'événement ni aucun consommateur qui l'attende. Les 4 autres
+méthodes de `GenericEngine` sont conservées et désormais testées (comportement de repli réel,
+pas un test tautologique — cf. `test/client/engines/generic-client-engine.spec.ts`).
+
+### Conséquences
+`changeSlide` supprimé de `GenericEngine` (aucune sous-classe ne le surchargeait, aucun test ne
+le couvrait, donc rien à adapter ailleurs). Couverture de `generic-client-engine.ts` : 4 tests
+comportementaux ajoutés (init/goToSlide no-op, getSlides() → `[]`, getSlideNotes() → `null`),
+en plus du test de constructeur préexistant.
