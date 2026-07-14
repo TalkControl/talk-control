@@ -600,3 +600,76 @@ pas un test tautologique — cf. `test/client/engines/generic-client-engine.spec
 le couvrait, donc rien à adapter ailleurs). Couverture de `generic-client-engine.ts` : 4 tests
 comportementaux ajoutés (init/goToSlide no-op, getSlides() → `[]`, getSlideNotes() → `null`),
 en plus du test de constructeur préexistant.
+
+---
+
+## IMP-013 — Dédup des jobs tests/coverage en CI
+
+**Étape :** 16 | **Statut :** ✅ décidé et implémenté (2026-07-13, branche `chore/step-16-ci`)
+
+### Contexte
+`develop.yml` faisait tourner chaque suite Vitest deux fois par run : une fois nue
+(`unit-and-integration` pour jsdom, `web-components` pour le mode browser), une fois de plus à
+l'intérieur du job `coverage` (`coverage:jsdom` + `coverage:browser` + `coverage:merge`, avec
+seuils désactivés sur les deux premiers puis appliqués au merge). Le plan (step-16-ci.md) proposait
+deux options : (a) supprimer les jobs nus et faire du job `coverage` le seul qui exécute les
+suites, (b) garder les jobs nus rapides sur chaque PR et réserver `coverage` au push `develop`.
+
+### Décision
+**Option (a).** Le job `coverage` remplace `unit-and-integration` et `web-components` : chaque
+suite ne tourne plus qu'une fois par run (dans `coverage:jsdom`/`coverage:browser`), au lieu de
+deux. Mesuré en local : `NODE_ENV=test npm run coverage` (jsdom + browser + merge) = ~13 s contre
+un total antérieur de trois exécutions distinctes (jsdom nue + browser nue + jsdom/browser à
+nouveau dans coverage) largement plus long. L'option (b) aurait gardé le feedback PR plus fin
+(jobs séparés) mais au prix de dupliquer l'exécution sur chaque push `develop`, sans bénéfice net
+puisque le job `coverage` seul reste rapide.
+
+### Conséquences
+7 jobs → 6 (`lint`, `typecheck`, `build-check`, `coverage`, `e2e`, `server-smoke`) + `docs-deploy`
+conditionnel. Le gate de seuils (`vitest.config.ts`, 80/90/70/80 depuis l'étape 15) reste porté par
+`coverage:merge`, vérifié réellement bloquant en local (seuil `lines` remonté artificiellement à
+99 → `ERROR: Coverage for lines (94.43%) does not meet global threshold (99%)`, exit 1, seuils
+réels restaurés immédiatement après test).
+
+---
+
+## IMP-014 — Remplacement de jsdoc-to-markdown par TypeDoc
+
+**Étape :** 16 | **Statut :** ✅ décidé et implémenté (2026-07-13, branche `chore/step-16-ci`)
+
+### Contexte
+`scripts/jsdoc-build.mjs` scannait des `.js` sous `src/` — disparus depuis la migration TypeScript
+(lit/event-bus, étapes 10-11). `jsdoc:build` généraient silencieusement 0 fichier (`generated.length
+=== 0`, pas d'erreur), donc `docs:build` produisait une doc API vide sans jamais faire échouer la CI.
+Vérification empirique avant de corriger : `jsdoc-to-markdown` (donc `jsdoc` en dessous) ne parse pas
+la syntaxe TypeScript — passer un fichier `.ts` réel produit `SyntaxError: This experimental syntax
+requires enabling one of the following parser plugin(s): "flow", "typescript"`, sans option exposée
+par `jsdoc-to-markdown` pour activer ce plugin babel. Ce n'est donc pas un scan de mauvaise extension
+à corriger : jsdoc est structurellement incompatible avec `src/` 100 % TypeScript.
+
+### Options
+- **(a)** Patcher `jsdoc-to-markdown`/`jsdoc` pour accepter le TS (pas d'option exposée, aurait
+  nécessité de forker ou monkey-patcher une dépendance — contraire à KISS).
+- **(b)** Transpiler `src/**/*.ts` vers du JS en conservant les commentaires JSDoc avant de les
+  passer à `jsdoc-to-markdown` — pipeline supplémentaire fragile, réinvente ce que TypeDoc fait
+  déjà nativement.
+- **(c)** Remplacer l'outil par **TypeDoc + `typedoc-plugin-markdown`** — support TS natif (c'est
+  le compilateur TypeScript lui-même), génère du Markdown consommable par VitePress.
+
+### Décision
+**(c).** `typedoc@0.28.20` + `typedoc-plugin-markdown@4.12.0` (peer-compatibles, versions courantes
+au moment de l'étape). `scripts/jsdoc-build.mjs` réécrit pour utiliser l'API programmatique
+(`Application.bootstrapWithPlugins` + `generateOutputs`), même nom de fichier/scripts npm conservés
+(`jsdoc:build`, `docs:build`) pour ne pas propager un renommage dans le reste de la documentation
+historique qui référence ces noms (`docs/migration/`, `docs/improvements/`). `entryFileName:
+'index.md'` + `readme: 'none'` pour rester compatible avec le routing VitePress (`index.md` comme
+page de dossier) sans dupliquer le contenu du README racine.
+
+### Conséquences
+179 pages Markdown générées (contre 0 avant), `docs:build` produit une doc API non vide et
+consommable par VitePress. `docs-sources/developers/code/` devient entièrement gitignored
+(généré à chaque build, y compris son `index.md` qui était committé par erreur auparavant).
+Bug additionnel découvert et corrigé au passage : `docs:build` écrivait `docs-dist` **hors du
+repo** (`--outDir ../docs-dist` résolu relativement au cwd du script npm — la racine du repo —
+et non à `docs-sources` comme l'intention du script le suggérait), rendant tout déploiement
+impossible ; corrigé en `--outDir docs-dist`.

@@ -93,7 +93,7 @@ Garde-fous quel que soit le modèle : exécuter réellement les 6 commandes de v
 | Étape | Statut | Contenu |
 |---|---|---|
 | [15 — Gaps de tests](step-15-test-gaps.md) | ✅ | Modules non testés comblés (plugin.ts, tc-controller, touch-pointer, wrappers, server/bootstrap), helpers factorisés (`test/helpers/dom.ts`), seuils remontés (80/90/70/80), `changeSlide` mort supprimé (IMP-012), doc coverage régénérée |
-| [16 — CI refonte](step-16-ci.md) | ⬜ | Lint bloquant, caches Playwright, concurrency, dédup jobs, déploiement docs |
+| [16 — CI refonte](step-16-ci.md) | ✅ | Lint bloquant, cache Playwright, dédup jobs (IMP-013), TypeDoc remplace jsdoc-to-markdown (IMP-014), déploiement docs GitHub Pages, release sur tag — run CI réel validé (PR #36) |
 
 ### Phase F — Agentic
 

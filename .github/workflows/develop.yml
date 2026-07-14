@@ -8,18 +8,26 @@ on:
         branches:
             - develop
 
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+
 jobs:
     # ----------------------------------------------------------------
-    # Job 1 — Tests unitaires et intégration (Vitest jsdom)
+    # Job 1 — Lint (ESLint, non destructif)
     # ----------------------------------------------------------------
-    unit-and-integration:
-        name: Tests Vitest (jsdom) — Node 24
+    lint:
+        name: Lint — Node 24
         runs-on: ubuntu-latest
+        timeout-minutes: 10
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
 
             - name: Setup Node 24
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: '24'
                   cache: 'npm'
@@ -27,113 +35,21 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Run tests
-              run: NODE_ENV=test npm test
+            - name: Lint check
+              run: npm run lint:check
 
     # ----------------------------------------------------------------
-    # Job 2 — Tests web components en browser mode (Vitest + Playwright)
-    # ----------------------------------------------------------------
-    web-components:
-        name: Web components (browser mode) — Node 24
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-
-            - name: Setup Node 24
-              uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Install Playwright chromium
-              run: npx playwright install chromium --with-deps
-
-            - name: Run web component tests
-              run: npm run test:components
-
-    # ----------------------------------------------------------------
-    # Job 3 — Tests E2E Playwright
-    # ----------------------------------------------------------------
-    e2e:
-        name: E2E Playwright — Node 24
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-
-            - name: Setup Node 24
-              uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Install Playwright chromium
-              run: npx playwright install chromium --with-deps
-
-            - name: Run E2E tests
-              run: npm run test:e2e
-
-    # ----------------------------------------------------------------
-    # Job 4 — Coverage
-    # ----------------------------------------------------------------
-    coverage:
-        name: Coverage check — Node 24
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-
-            - name: Setup Node 24
-              uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Install Playwright chromium
-              run: npx playwright install chromium --with-deps
-
-            - name: Run coverage (thresholds enforced in vitest.config.ts)
-              run: NODE_ENV=test npm run coverage
-
-    # ----------------------------------------------------------------
-    # Job 5 — Vite build (production)
-    # ----------------------------------------------------------------
-    build-check:
-        name: Vite build — Node 24
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-
-            - name: Setup Node 24
-              uses: actions/setup-node@v4
-              with:
-                  node-version: '24'
-                  cache: 'npm'
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Build (production)
-              run: npm run build
-
-    # ----------------------------------------------------------------
-    # Job 6 — TypeScript strict
+    # Job 2 — TypeScript strict
     # ----------------------------------------------------------------
     typecheck:
         name: TypeScript strict — Node 24
         runs-on: ubuntu-latest
+        timeout-minutes: 10
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
 
             - name: Setup Node 24
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: '24'
                   cache: 'npm'
@@ -145,16 +61,123 @@ jobs:
               run: npx tsc --noEmit
 
     # ----------------------------------------------------------------
-    # Job 7 — Smoke test du serveur Express
+    # Job 3 — Vite build (production)
+    # ----------------------------------------------------------------
+    build-check:
+        name: Vite build — Node 24
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v7
+
+            - name: Setup Node 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: '24'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build (production)
+              run: npm run build
+
+    # ----------------------------------------------------------------
+    # Job 4 — Coverage (jsdom + browser + merge) : seul job qui lance les
+    # suites Vitest. Remplace les anciens jobs unit-and-integration et
+    # web-components pour ne plus exécuter chaque suite 2× par run (étape 16).
+    # ----------------------------------------------------------------
+    coverage:
+        name: Coverage check — Node 24
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@v7
+
+            - name: Setup Node 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: '24'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Get Playwright version
+              id: playwright-version
+              run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+
+            - name: Cache Playwright browsers
+              id: playwright-cache
+              uses: actions/cache@v6
+              with:
+                  path: ~/.cache/ms-playwright
+                  key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+            - name: Install Playwright chromium (cold)
+              if: steps.playwright-cache.outputs.cache-hit != 'true'
+              run: npx playwright install --with-deps chromium
+
+            - name: Install Playwright OS dependencies (cache hit)
+              if: steps.playwright-cache.outputs.cache-hit == 'true'
+              run: npx playwright install-deps chromium
+
+            - name: Run coverage (jsdom + browser + merge — thresholds enforced in vitest.config.ts)
+              run: NODE_ENV=test npm run coverage
+
+    # ----------------------------------------------------------------
+    # Job 5 — Tests E2E Playwright
+    # ----------------------------------------------------------------
+    e2e:
+        name: E2E Playwright — Node 24
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v7
+
+            - name: Setup Node 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: '24'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Get Playwright version
+              id: playwright-version
+              run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+
+            - name: Cache Playwright browsers
+              id: playwright-cache
+              uses: actions/cache@v6
+              with:
+                  path: ~/.cache/ms-playwright
+                  key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+            - name: Install Playwright chromium (cold)
+              if: steps.playwright-cache.outputs.cache-hit != 'true'
+              run: npx playwright install --with-deps chromium
+
+            - name: Install Playwright OS dependencies (cache hit)
+              if: steps.playwright-cache.outputs.cache-hit == 'true'
+              run: npx playwright install-deps chromium
+
+            - name: Run E2E tests
+              run: npm run test:e2e
+
+    # ----------------------------------------------------------------
+    # Job 6 — Smoke test du serveur Express
     # ----------------------------------------------------------------
     server-smoke:
         name: Server smoke test — Node 24
         runs-on: ubuntu-latest
+        timeout-minutes: 5
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
 
             - name: Setup Node 24
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: '24'
                   cache: 'npm'
@@ -168,8 +191,57 @@ jobs:
             - name: Wait for server on port 3001
               run: npx wait-on tcp:3001 --timeout 30000
 
-            - name: Check server responds
-              run: curl -sf http://localhost:3001/ || curl -sf http://localhost:3001/socket.io/ || true
+            - name: Check server responds (socket.io handshake)
+              run: |
+                  status=$(curl -s -o /tmp/smoke.out -w '%{http_code}' http://localhost:3001/socket.io/)
+                  echo "HTTP status: $status"
+                  cat /tmp/smoke.out
+                  echo
+                  if [ "$status" != "400" ] || ! grep -q "Transport unknown" /tmp/smoke.out; then
+                      echo "::error::Réponse inattendue de /socket.io/ (status=$status) — le serveur ne répond pas correctement"
+                      exit 1
+                  fi
 
-            - name: Server started successfully
-              run: echo "Server smoke test passed — port 3001 is open"
+    # ----------------------------------------------------------------
+    # Job 7 — Déploiement de la documentation VitePress (GitHub Pages)
+    # Uniquement sur push develop, et seulement si toute la CI est verte.
+    # ----------------------------------------------------------------
+    docs-deploy:
+        name: Deploy docs — GitHub Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        needs: [lint, typecheck, build-check, coverage, e2e, server-smoke]
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+            pages: write
+            id-token: write
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - uses: actions/checkout@v7
+
+            - name: Setup Node 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: '24'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build docs (API reference + VitePress)
+              run: npm run docs:build
+
+            - name: Configure GitHub Pages
+              uses: actions/configure-pages@v6
+
+            - name: Upload docs artifact
+              uses: actions/upload-pages-artifact@v5
+              with:
+                  path: docs-dist
+
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v5

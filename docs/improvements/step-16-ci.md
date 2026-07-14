@@ -73,3 +73,83 @@ Le `jsdoc:build` est aussi cassé (scanne des `.js` disparus) — à corriger ic
 - Le déploiement docs nécessite les bons `permissions` (`pages: write`, `id-token: write`) — le documenter.
 - Tester le workflow sur une PR de la branche elle-même (la CI se déclenche sur `develop`, donc la PR de
   cette étape valide directement les changements).
+
+## Résultats de validation (2026-07-13, branche `chore/step-16-ci`, PR #36)
+
+### Écart supplémentaire découvert (non listé dans le plan initial)
+
+Le repo `TalkControl/talk-control` (l'organisation finale — `origin` pointait sur le fork
+`sfeir-open-source` en début de session, corrigé ici, `develop` poussé en fast-forward, 106 commits
+jamais publiés jusqu'alors) a l'organisation entière configurée en `allowed_actions: local_only` :
+**aucune Action GitHub officielle** (`actions/checkout`, `actions/setup-node`, etc.) ne pouvait
+s'exécuter, sur aucun repo de l'organisation, avant cette étape — `startup_failure`, 0 job planifié,
+confirmé identique avec l'ancien `develop.yml` (avant toute modification de cette étape) sur le
+premier push de `develop`. Politique organisation changée par un Owner TalkControl vers « Allow
+TalkControl, and select non-TalkControl, actions and reusable workflows » + « Allow actions created
+by GitHub » — portée minimale (namespace `actions/*` uniquement, aucune action tierce Marketplace).
+Documenté ici plutôt que dans decisions.md : c'est un blocage d'infra/organisation, pas une décision
+d'architecture applicative.
+
+### Run CI réel observé
+
+Premier run réel obtenu après déblocage (PR #36, commit `9aa496a`) : **succès**, 7 jobs (6 + `docs-deploy`
+correctement skippé — condition `push` sur `develop` uniquement, pas sur `pull_request`). Durées
+individuelles (cache Playwright à froid, premier run avec cette clé) :
+
+| Job | Durée |
+|---|---|
+| Lint | 16s |
+| TypeScript strict | 17s |
+| Vite build | 20s |
+| Server smoke test | 22s |
+| Coverage (jsdom+browser+merge) | 1m6s |
+| E2E Playwright | 1m9s |
+| **Total run (parallèle, wall-clock)** | **1m9s** (borné par le plus long, E2E) |
+
+Avertissement de dépréciation Node 20 relevé sur ce run (`actions/checkout@v4`, `actions/setup-node@v4`
+forcés sur Node 24) → actions montées à leur dernière version majeure dans un commit suivant
+(`checkout` v4→v7, `setup-node` v4→v6, `cache` v4→v6, `configure-pages` v5→v6,
+`upload-pages-artifact` v3→v5, `deploy-pages` v4→v5).
+
+### Cache Playwright (avant/après)
+
+- **1er run** (`9aa496a`, cache froid) : step « Install Playwright chromium (cold) » exécutée dans
+  `coverage` et `e2e` — téléchargement complet du binaire chromium. `coverage` 1m6s, `e2e` 1m9s.
+- **2e run** (`2ba1984`, même clé de cache — lockfile inchangé) : confirmé via l'API des steps —
+  « Install Playwright chromium (cold) » → `skipped`, « Install Playwright OS dependencies (cache
+  hit) » → `success`. Le téléchargement du binaire chromium est bien sauté. `coverage` 1m1s, `e2e`
+  1m1s (vs 1m6s/1m9s à froid) — run total 1m2s vs 1m9s.
+
+### Concurrency
+
+Commit `a48ac6f` poussé alors que le run précédent (déclenché par `f99c750`, run `29275092170`)
+était encore `in_progress`. Résultat observé via l'API GitHub Actions :
+- `29275092170` (run obsolète) → `status: completed`, `conclusion: cancelled`.
+- `29275125106` (nouveau run) → passe de `pending` à `in_progress` dès l'annulation du précédent,
+  termine en succès.
+
+`cancel-in-progress: true` confirmé fonctionnel : le run devenu obsolète est bien annulé au profit
+du plus récent, au lieu de tourner en parallèle et de gâcher des minutes CI.
+
+### Coverage gate
+
+Vérifié réellement bloquant **en local** (pas seulement en lecture du YAML) : seuil `lines` remonté
+artificiellement de 80 à 99 dans `vitest.config.ts`, `npx vitest --mergeReports=... --coverage`
+échoue avec `ERROR: Coverage for lines (94.43%) does not meet global threshold (99%)`, exit code 1.
+Seuil réel (80/90/70/80, remonté à l'étape 15) restauré immédiatement après le test, jamais commité.
+
+### Validations locales
+
+```
+npx tsc --noEmit          → 0 erreur
+npm run lint               → 0 erreur
+NODE_ENV=test npm test     → 392/392
+npm run test:components    → 35/35
+npm run coverage           → 93.02%/90.76%/86.57%/94.43% (stmt/branch/func/lines) vs seuils 80/90/70/80
+npm run build               → OK
+npm audit                   → 0 vulnérabilité
+npm run test:e2e            → 35/35 (échec initial dû à un process `serve` orphelin sur le port 3000,
+                               sans lien avec les changements de cette étape — tué, tests relancés)
+npm run docs:build          → 179 pages Markdown générées (TypeDoc), doc API non vide
+```
+
