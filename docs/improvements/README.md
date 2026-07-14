@@ -16,14 +16,16 @@ Chaque étape suit ce cycle. Les fichiers `step-XX` ne le répètent pas — il 
 1. **Branche** : `git checkout develop && git pull && git checkout -b <type>/step-XX-<slug>` (type = `feat|fix|chore|test` selon l'étape).
 2. **Lire le fichier d'étape en entier** avant de toucher au code. Vérifier que l'état actuel décrit correspond toujours au code (le plan peut avoir vieilli — si divergence, le signaler et adapter, ne pas appliquer aveuglément).
 3. **TDD quand l'étape s'y prête** : écrire/adapter les tests d'abord, les voir échouer, implémenter.
-4. **Validation systématique** avant commit (en plus des validations spécifiques de l'étape) :
+4. **Validation systématique** avant commit (en plus des validations spécifiques de l'étape) —
+   `./scripts/verify.sh` (étape 17) enchaîne le tout, miroir de la CI :
    ```bash
-   npx tsc --noEmit          # 0 erreur
-   npm run lint              # 0 erreur
-   NODE_ENV=test npm test    # suite jsdom verte
-   npm run test:components   # suite browser verte
-   npm run test:e2e          # suite e2e verte
-   npm run build             # build Vite OK
+   npx tsc --noEmit                 # 0 erreur
+   npm run lint:check               # 0 erreur (lint = --fix, pas une validation)
+   NODE_ENV=test npm run coverage   # suites jsdom + browser + merge, seuils 80/90/70/80 (IMP-013)
+   npm run test:e2e                 # suite e2e verte (Playwright démarre les 3 services)
+   npm run build                    # build Vite OK
+   npm audit                        # 0 vulnérabilité
+   npm run docs:build               # doc VitePress + TypeDoc OK
    ```
 5. **Commits Gitmoji** (convention du repo), messages en français comme l'historique récent, un commit par unité logique.
 6. **Documenter** : cocher l'étape dans ce README, compléter le `step-XX.md` avec la section « Résultats de validation » (comme dans `docs/migration/`), ajouter un `IMP-XXX` dans decisions.md si une décision a été prise.
@@ -99,7 +101,7 @@ Garde-fous quel que soit le modèle : exécuter réellement les 6 commandes de v
 
 | Étape | Statut | Contenu |
 |---|---|---|
-| [17 — Socle agentic](step-17-agentic.md) | ⬜ | CLAUDE.md, .claude/ versionné, skills de vérification, revue IA automatisée |
+| [17 — Socle agentic](step-17-agentic.md) | ✅ | CLAUDE.md + AGENTS.md, `.claude/settings.json` + review-guidelines versionnés, `scripts/verify.sh` (IMP-011) — revue CI écartée (politique Actions org), `/code-review` manuel |
 
 ## Dépendances entre étapes
 

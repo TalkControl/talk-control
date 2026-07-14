@@ -84,3 +84,39 @@ l'outil, parte du même contexte. Convention commit + validation identiques.
   pas d'URL ngrok personnelle.
 - Cette étape capitalise sur tout le reste : la faire **en dernier** permet d'y encoder les leçons réelles
   des étapes 01-16 (les vrais pièges rencontrés, pas ceux anticipés ici).
+
+## Résultats de validation (2026-07-14, branche `chore/step-17-agentic`)
+
+### Ce qui a été livré (décision détaillée : IMP-011)
+
+| Action du step | Résultat |
+|---|---|
+| 1. `CLAUDE.md` | ✅ Racine — architecture 3 services, stack, validation (rapide vs complète), contrat golden-path, conventions, **pièges vécus** des étapes 01-16 (décorateurs Lit legacy IMP-006, `NODE_ENV=test`, `PIPESTATUS`, `workers: 1`, cache Vite, `vite.aliases.ts`, politique Actions org, TypeDoc IMP-014, port 3000 résiduel) |
+| 2. `.claude/settings.json` | ✅ Versionné, allowlist générique (validation, git usuel, npm/npx outillage, MCP playwright). `settings.local.json` régénéré épuré : 139 → 37 entrées (PIDs, `/tmp`, Mocha, scratchpads de sessions mortes supprimés). `.gitignore` : `.claude/*` ignoré sauf les 2 fichiers versionnés |
+| 3. Vérification projet | ✅ Option KISS retenue : `scripts/verify.sh` (pas de skill) — tsc, lint:check, coverage (suites incluses, IMP-013), e2e, build, audit, docs:build, récapitulatif + exit agrégé. Protocole du README § 4 harmonisé sur cette liste |
+| 4. Revue CI automatisée | ❌ Écartée (IMP-011) : politique Actions org = github-owned uniquement, `anthropics/claude-code-action` inexécutable sans élargissement `admin:org` + secret API facturé. À la place : `.claude/review-guidelines.md` (dettes du plan encodées) pour `/code-review` manuel — prêt à brancher en CI si la politique change un jour |
+| 5. `AGENTS.md` | ✅ Minimal, renvoie vers CLAUDE.md (source de vérité unique) avec l'essentiel inliné. Pas de symlink (fragile cross-plateforme) |
+
+### Validation exécutée en réel
+
+`./scripts/verify.sh` lancé sur la branche :
+
+- **1er run : ÉCHEC e2e — et c'était le script qui avait raison.** typecheck/lint/coverage/build/
+  audit (0 vulnérabilité)/docs verts, mais e2e 24/35 : un Vite résiduel d'une session précédente
+  occupait le port 3000, `reuseExistingServer` (qui ne sonde que :3000) a cru l'environnement
+  démarré et n'a lancé ni tc-server ni showcase. Le récapitulatif a correctement signalé `e2e
+  ÉCHEC` et rendu exit 1 — le chemin d'échec du script est donc validé en conditions réelles.
+  Piège ajouté à CLAUDE.md (« Pièges connus »), port libéré, e2e relancés : **35/35 verts en 27 s**.
+- **2e run complet : tout vert**, exit 0 — typecheck 0 erreur, lint:check 0 erreur, coverage
+  jsdom + browser + merge seuils 80/90/70/80 OK, e2e 35/35, build Vite OK, `npm audit` 0,
+  `docs:build` OK (TypeDoc + VitePress).
+- Test mental « nouvelle session » : un agent qui ouvre le repo lit CLAUDE.md (ou AGENTS.md selon
+  l'outil) et y trouve les 3 services, les commandes exactes de validation, le contrat
+  golden-path, le protocole du plan et les pièges — sans redécouvrir l'outillage. Le scénario
+  vécu au 1er run (échec e2e environnemental) est précisément celui que le CLAUDE.md permet
+  désormais de diagnostiquer en une commande.
+
+### Hors scope assumé
+
+Pas de skill `.claude/skills/`, pas de hooks, pas de multi-agents : critère « si simple que ça
+reste vrai dans 6 mois ». Le workflow de revue CI reste une évolution documentée (IMP-011).
