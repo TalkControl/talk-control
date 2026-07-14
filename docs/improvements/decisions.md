@@ -605,6 +605,15 @@ sans redécouverte ; la validation complète tient en une invocation (`./scripts
 permissions partagées sont propres et versionnées. Validation : verify.sh exécuté en réel sur la
 branche (voir step-17, « Résultats de validation »).
 
+### Critère pour rouvrir la question des skills (challengé et confirmé au merge)
+Faits et pièges → CLAUDE.md ; séquences déterministes → script ; une skill `.claude/skills/`
+seulement pour une procédure **fréquente, multi-étapes, à jugement**, trop grosse pour le contexte
+permanent — aujourd'hui cette case est vide (le seul workflow répétitif, « exécuter une étape du
+plan », s'éteint avec le plan). Candidats identifiés si le développement actif reprend :
+`/new-plugin` (scaffold + conventions IMP-010) et `/smoke` (golden-path manuel via Playwright MCP,
+pièges de l'étape 05). Déclencheur concret : réexpliquer la même procédure dans un prompt pour la
+3e fois — ce prompt est le brouillon de la skill.
+
 ---
 
 ## IMP-012 — Sort de `GenericEngine.changeSlide` (bug vs code mort)
