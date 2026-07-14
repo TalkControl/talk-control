@@ -1,0 +1,73 @@
+import { GenericEngine } from './generic-client-engine.js';
+import type { Slide } from '@event-bus/slide';
+
+export class RevealEngine extends GenericEngine {
+    callbackEngine: null = null;
+
+    Reveal: RevealApi;
+
+    constructor() {
+        super();
+        this.Reveal = window.Reveal;
+    }
+
+    override init(): void {
+        this.Reveal.configure({
+            controls: false,
+            transition: 'default',
+            transitionSpeed: 'fast',
+            history: false,
+            slideNumber: false,
+            keyboard: true,
+            touch: false,
+            embedded: true,
+            // Reveal 6.x auto-switches to its native "Scroll View" (a different DOM
+            // structure) below this width — it kicks in on the narrow presenter
+            // next-slide preview pane and breaks getSlides()/goToSlide(), and fights
+            // TalkControl's own touch plugin. TalkControl never wants Reveal's own
+            // scroll view, so disable the auto-activation entirely.
+            scrollActivationWidth: null
+        });
+    }
+
+    override goToSlide(indices: Slide, delta = 0): void {
+        let slideDelta: Slide = { ...indices };
+        const slides = this.getSlides();
+        const currentIndex = slides.findIndex(slide => slide.h === indices.h && slide.v === indices.v);
+        if (currentIndex === -1) {
+            // Can happen if the command arrives before Reveal has rendered the slides into the DOM,
+            // or if it targets a slide that no longer exists. Drop it rather than crash.
+            return;
+        }
+        if (indices.f + delta < slides[currentIndex].fMax) {
+            slideDelta.f += delta;
+        } else if (currentIndex + delta < slides.length - 1) {
+            slideDelta = slides[currentIndex + delta];
+        } else {
+            slideDelta = slides[slides.length - 1];
+        }
+        this.Reveal.slide(slideDelta.h, slideDelta.v, slideDelta.f);
+    }
+
+    override getSlides(): Slide[] {
+        const slides: Slide[] = [];
+        const horizontalSlides = document.querySelectorAll('.slides>section');
+        horizontalSlides.forEach((slideH, indexH) => {
+            const fragmentsH = slideH.querySelectorAll('.fragment');
+            const verticalSlides = slideH.querySelectorAll('section');
+            if (verticalSlides.length) {
+                verticalSlides.forEach((slideV, indexV) => {
+                    const fragmentsV = slideV.querySelectorAll('.fragment');
+                    slides.push({ h: indexH, v: indexV, f: -1, fMax: fragmentsV.length || -1 });
+                });
+            } else {
+                slides.push({ h: indexH, v: 0, f: -1, fMax: fragmentsH.length || -1 });
+            }
+        });
+        return slides;
+    }
+
+    override getSlideNotes(): unknown {
+        return this.Reveal.getSlideNotes();
+    }
+}

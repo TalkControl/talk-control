@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
@@ -13,14 +13,14 @@
             <div class="mt-1 mr-2 has-text-right"><tc-menu-plugins></tc-menu-plugins></div>
         </section>
         <tc-loader>
-            <section slot="success" id="content" class="columns is-marginless">
-                <div class="column is-paddingless is-three-fifths" id="current">
+            <section slot="success" id="content" class="columns m-0">
+                <div class="column p-0 is-three-fifths" id="current">
                     <div class="content">
                         <tc-slide id="currentSlide" focus></tc-slide>
                         <div id="placeholder2"></div>
                     </div>
                 </div>
-                <div class="column is-paddingless has-background-white">
+                <div class="column p-0 has-background-white">
                     <div class="has-background-white" id="next">
                         <div class="content">
                             <tc-slide id="nextSlide" delta="1"></tc-slide>
@@ -31,7 +31,7 @@
                             <div class="block-title">
                                 <p class="is-size-6">TIMER</p>
                             </div>
-                            <div class="is-paddingless is-margin-less"><tc-timer></tc-timer></div>
+                            <div class="p-0 is-margin-less"><tc-timer></tc-timer></div>
                         </div>
                     </div>
                     <div id="placeholder1" class="mb-0 ml-1 mr-3">
@@ -52,5 +52,6 @@
                 </div>
             </section>
         </tc-loader>
+        <script type="module" src="/src/client/layouts/presenter/index.ts"></script>
     </body>
 </html>

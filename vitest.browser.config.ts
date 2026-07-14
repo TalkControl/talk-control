@@ -1,0 +1,26 @@
+import { defineConfig } from 'vitest/config';
+import { playwright } from '@vitest/browser-playwright';
+import { tsconfigAliases } from './vite.aliases';
+
+export default defineConfig({
+    resolve: {
+        alias: tsconfigAliases
+    },
+    test: {
+        browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            instances: [{ browser: 'chromium' }]
+        },
+        globals: true,
+        include: ['test/client/web-components/**/*.spec.ts'],
+        setupFiles: ['./test/client/web-components/setup.ts'],
+        coverage: {
+            provider: 'v8',
+            all: false,
+            include: ['src/**/*.ts'],
+            exclude: ['src/client/layouts/**', 'src/environment/**']
+        }
+    }
+});

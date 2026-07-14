@@ -18,7 +18,7 @@ pids
 # Coverage directory used by tools like istanbul
 coverage
 *.lcov
-.nyc_output
+.vitest-reports
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
@@ -52,12 +52,28 @@ Thumbs.db
 # Slide show example
 showcase/resources/tc-component/
 
-# Parcel
-.cache
-
 # Documentation
 docs-dist
-docs-sources/developers/code/parts/
+docs-sources/developers/code/
+docs-sources/.vitepress/cache/
 
 # Jetbrains
 .idea
+
+# Playwright MCP artifacts
+.playwright-mcp/
+
+# Vitest browser mode artifacts
+test-results/
+.vitest-attachments/
+test/**/__screenshots__/
+
+# Local config: may carry the ngrok token and is rewritten at runtime with
+# tunnel urls — recreated from config/config.example.json by npm install
+config/config.json
+
+# Claude Code : seuls settings.json et review-guidelines.md sont versionnés,
+# le reste de .claude/ est de l'état local de session
+.claude/*
+!.claude/settings.json
+!.claude/review-guidelines.md

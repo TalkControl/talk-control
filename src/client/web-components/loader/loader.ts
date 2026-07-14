@@ -1,0 +1,58 @@
+import { customElement } from 'lit/decorators.js';
+import { TcStyledElement } from '@compat/lit-styles-compat';
+import { html, css } from 'lit';
+import { TCComponentLoaderComponent } from '@client/web-components/loader/loader-tc-component';
+
+@customElement('tc-loader')
+export class LoaderComponent extends TcStyledElement {
+    static styles = css`
+        :host {
+        }
+        .tc-loader {
+            background-color: grey;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 6px;
+            opacity: 0;
+            z-index: -1;
+        }
+        .tc-loader.is-active {
+            opacity: 1;
+            z-index: 1;
+        }
+        .loader {
+            height: 80px;
+            width: 80px;
+        }
+    `;
+
+    firstUpdated(): void {
+        new TCComponentLoaderComponent(this);
+    }
+
+    showSuccess(): void {
+        this.shadowRoot!.querySelector('.tc-loader')!.classList.remove('is-active');
+        this.shadowRoot!.querySelector('slot[name="success"]')!.classList.remove('is-hidden');
+    }
+
+    showError(): void {
+        this.shadowRoot!.querySelector('.tc-loader')!.classList.remove('is-active');
+        this.shadowRoot!.querySelector('slot[name="error"]')!.classList.remove('is-hidden');
+    }
+
+    render() {
+        return html`
+            <div class="tc-loader is-active">
+                <div class="loader is-loading"></div>
+            </div>
+            <slot name="success" class="is-hidden"></slot>
+            <slot name="error" class="is-hidden on-error"></slot>
+        `;
+    }
+}
