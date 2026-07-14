@@ -1,7 +1,9 @@
 export default {
     title: 'TalkControl',
     description: 'TalkControl documentation',
-    base: '/',
+    // Le site est servi en project page GitHub Pages (…github.io/talk-control/) —
+    // sans ce base, les assets sont référencés à la racine du domaine et 404ent.
+    base: '/talk-control/',
     ignoreDeadLinks: 'localhostLinks',
     themeConfig: {
         nav: [
