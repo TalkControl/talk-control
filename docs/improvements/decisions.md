@@ -555,11 +555,64 @@ golden-path 14 (menu plugins) vert, audit 0 vulnérabilité.
 
 ## IMP-011 — Socle agentic versionné
 
-**Étape :** 17 | **Statut :** ⬜
+**Étape :** 17 | **Statut :** ✅ tranché et implémenté (2026-07-14, branche `chore/step-17-agentic`)
 
-### Décision (à confirmer)
-CLAUDE.md + AGENTS.md + `.claude/settings.json` propre + skill/script de vérification + revue CI automatisée
-avec guidelines encodant les dettes éliminées. KISS : simple et maintenable à 6 mois.
+### Contexte
+Aucune configuration agentic versionnée alors que le projet est développé quasi exclusivement avec
+des agents : chaque session repartait de zéro. Seul artefact : un `.claude/settings.local.json`
+local pollué (139 entrées, PIDs codés en dur, chemins `/tmp`, références Mocha mortes).
+
+### Décision — le socle retenu (4 fichiers versionnés + 1 script)
+- **`CLAUDE.md`** (racine) : contexte projet dense — architecture 3 services + event-bus, stack,
+  commandes de validation canoniques (celles réellement exécutées par la CI de l'étape 16),
+  contrat golden-path, conventions, et les **pièges réellement vécus** pendant les étapes 01-16
+  (décorateurs Lit legacy IMP-006, `NODE_ENV=test`, `PIPESTATUS`, `workers: 1`, cache Vite,
+  `vite.aliases.ts`, politique Actions org, TypeDoc IMP-014).
+- **`AGENTS.md`** minimal (interop Gemini/Antigravity et autres outils) : renvoie vers CLAUDE.md
+  et inline l'essentiel (validation, conventions, interdits) pour les outils qui ne suivraient pas
+  le lien. Pas de symlink (fragile cross-plateforme) : deux fichiers, CLAUDE.md source de vérité.
+- **`.claude/settings.json`** versionné : allowlist générique (validation, git usuel, npm, npx
+  outillage, MCP playwright). Le `settings.local.json` (non versionné) est régénéré épuré : entrées
+  rtk/mempalace/gh/pkill machine-spécifiques conservées, tout le mort supprimé. `.gitignore` :
+  `.claude/*` ignoré sauf `settings.json` et `review-guidelines.md` (exclut scheduled_tasks.lock,
+  worktrees/, settings.local.json).
+- **`scripts/verify.sh`** (option KISS retenue contre une skill `.claude/skills/verify-talkcontrol/`) :
+  enchaîne tsc, lint:check, `NODE_ENV=test coverage` (les suites tournent dedans — pas de double
+  exécution, cohérent IMP-013), e2e, build, audit, docs:build, avec récapitulatif et exit code
+  agrégé. Un script shell est lisible, testable et **utilisable par n'importe quel outil** (pas
+  seulement Claude Code) — c'est le choix qui reste vrai à 6 mois. Le protocole de
+  `docs/improvements/README.md` § 4 est harmonisé sur cette liste (il datait d'avant l'étape 16 :
+  `lint` au lieu de `lint:check`, pas de coverage/audit/docs).
+- **`.claude/review-guidelines.md`** : encode les dettes éliminées par le plan (casts `as` de
+  payload, `any`, `console.*` bruts, secrets, CORS `*`, `innerHTML`, événements bus hors
+  `TcEventMap`, contournement anti-SSRF, broadcast hors room, baisse de seuils, décorateurs
+  standards, réintroduction webpack/babel/mocha/redux) pour une revue `/code-review` manuelle.
+
+### Revue de code automatisée en CI : écartée (option 4 du step)
+La politique GitHub Actions de l'organisation TalkControl est `selected` avec uniquement
+`github_owned_allowed: true` (constat étape 16) : `anthropics/claude-code-action` n'est pas
+github-owned et ne s'exécuterait pas. L'autoriser exigerait un élargissement de la politique org
+(`admin:org`, action manuelle de JF) **plus** un secret `ANTHROPIC_API_KEY` facturé à chaque PR.
+Contre le critère KISS de l'étape (« si simple que ça reste vrai dans 6 mois »), le ratio
+bénéfice/maintenance ne tient pas pour un repo à contributeur quasi unique qui revoit déjà chaque
+PR. **Évolution documentée** si le besoin devient réel : élargir la politique org à l'action
+Claude Code, provisionner le secret, et brancher `.claude/review-guidelines.md` (déjà écrit pour
+ça) comme contexte de revue.
+
+### Conséquences
+Une session d'agent neuve trouve dans CLAUDE.md le contexte, les commandes exactes et les pièges
+sans redécouverte ; la validation complète tient en une invocation (`./scripts/verify.sh`) ; les
+permissions partagées sont propres et versionnées. Validation : verify.sh exécuté en réel sur la
+branche (voir step-17, « Résultats de validation »).
+
+### Critère pour rouvrir la question des skills (challengé et confirmé au merge)
+Faits et pièges → CLAUDE.md ; séquences déterministes → script ; une skill `.claude/skills/`
+seulement pour une procédure **fréquente, multi-étapes, à jugement**, trop grosse pour le contexte
+permanent — aujourd'hui cette case est vide (le seul workflow répétitif, « exécuter une étape du
+plan », s'éteint avec le plan). Candidats identifiés si le développement actif reprend :
+`/new-plugin` (scaffold + conventions IMP-010) et `/smoke` (golden-path manuel via Playwright MCP,
+pièges de l'étape 05). Déclencheur concret : réexpliquer la même procédure dans un prompt pour la
+3e fois — ce prompt est le brouillon de la skill.
 
 ---
 

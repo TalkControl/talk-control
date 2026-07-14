@@ -71,3 +71,9 @@ test/**/__screenshots__/
 # Local config: may carry the ngrok token and is rewritten at runtime with
 # tunnel urls — recreated from config/config.example.json by npm install
 config/config.json
+
+# Claude Code : seuls settings.json et review-guidelines.md sont versionnés,
+# le reste de .claude/ est de l'état local de session
+.claude/*
+!.claude/settings.json
+!.claude/review-guidelines.md
