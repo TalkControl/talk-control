@@ -6,6 +6,50 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.0] — 2026-07-14
+
+Post-migration improvement plan, 17 steps executed on top of the v0.5.0 infrastructure overhaul.
+Application behavior is unchanged (golden-path contract, covered by real e2e tests); everything
+around it — security, dependencies, typing, tests, CI — has been hardened. Decisions are traced
+in `docs/improvements/decisions.md` (IMP-001 to IMP-014).
+
+### Security
+
+- **Anti-SSRF validation** of presentation URLs shared by patcher and proxy: http/https only, private/link-local/metadata IPs refused after DNS resolution, host allowlist, signed `httpOnly` cookie (IMP-001)
+- **Socket.IO session pairing** — opaque UUID session token (`?s=`), handshake auth middleware, per-session rooms; broadcasts never leave the emitting session's room (IMP-002)
+- **Secrets out of git** — `config/config.json` untracked (recreated from `config.example.json` by postinstall), ngrok token via `NGROK_AUTHTOKEN` (IMP-003)
+- **CORS wildcard removed** — shared origin allowlist applied to Express, Socket.IO and the Vite dev server (IMP-003)
+- `npm audit`: 3 vulnerabilities → **0**
+
+### Added
+
+- **Real end-to-end golden-path suite** — Playwright drives the actual 3-service app (35 tests, including the presenter → on-stage remote-control flow); the legacy static-fixture tests are kept separately
+- **Typed event bus** — `TcEventMap` covers the 21 business events; `on`/`broadcast`/`emitTo` reject wrong payloads at compile time (IMP-007)
+- **Plugin auto-discovery** via `import.meta.glob`, replacing the hard-coded switch; `config/plugins.json` remains the activation source (IMP-010)
+- **Shared stylesheet** — Bulma/FontAwesome `CSSStyleSheet` built once and adopted by all 13 web-component shadow roots (IMP-005)
+- **Coverage thresholds** enforced in CI: 80 lines / 90 functions / 70 branches / 80 statements, applied on the merged jsdom+browser report
+- **Docs deployment** to GitHub Pages and **tag-triggered release workflow**
+- **Agentic baseline** — `CLAUDE.md`, `AGENTS.md`, versioned `.claude/settings.json`, review guidelines, `scripts/verify.sh` full-validation script (IMP-011)
+
+### Changed
+
+- **Vite 5 → 8** (Rolldown), Vitest 4.1, VitePress 2-alpha, ESLint 10 + typescript-eslint preset, Bulma 0.9 → 1.0.4, `lit-element` → `lit` 3 (IMP-004, IMP-005b, IMP-006)
+- `npm install` no longer needs `--legacy-peer-deps` (root peer conflict resolved by the Vite upgrade)
+- **Redux replaced** by a ~35-line typed store with the same `dispatch`/`getState`/`subscribe` API (IMP-008)
+- **TypeDoc replaces jsdoc-to-markdown** for the API reference — jsdoc cannot parse TypeScript sources (IMP-014)
+- **CI overhauled** — blocking lint, deduplicated test/coverage jobs, Playwright browser cache, concurrency cancellation, real server smoke check (IMP-013)
+
+### Removed
+
+- Dead code confirmed by caller analysis: `RevealEngine.handleTouch` (IMP-009), `GenericEngine.changeSlide` (IMP-012), `keypressed` event
+- Dependencies: `redux`, `redux-logger`, `redux-mock-store`, `vite-tsconfig-paths`, webpack/babel/husky-4 leftovers
+
+### Fixed
+
+- Remote-control pairing regressions: per-browser session persistence, session token consumed then stripped from the address bar (anti-fixation, beamer-safe)
+- Vite dev server URL rewrite dropped query strings (`?s=` returned 404)
+- `docs:build` wrote its output outside the repository; API doc generation silently produced 0 files
+
 ## [0.5.0] — 2026-07-01
 
 Major infrastructure overhaul. The application logic is unchanged; everything below the surface has been modernized.
