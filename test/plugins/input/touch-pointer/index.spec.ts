@@ -272,18 +272,16 @@ describe('TouchPointerInput', function () {
             expect(setPointerColorSpy).toHaveBeenCalledWith('');
         });
 
-        it('should toggle the zoom with converted coordinates on "pointerClick"', function () {
-            // Given
+        it('should forward the raw percentages to the zoom on "pointerClick"', function () {
+            // Given la conversion en pixels se fait dans _toggleZoom, contre le repère du
+            // frame et non celui de la fenêtre (#41).
             const toggleZoomSpy = vi.spyOn(instance, '_toggleZoom');
-            vi.stubGlobal('innerWidth', 1000);
-            vi.stubGlobal('innerHeight', 500);
 
             // When
             instance._onMessageEvent(messageEvent({ type: 'x', data: { type: 'pointerClick', payload: { x: '50%', y: '20%' } } }));
 
             // Then
-            expect(toggleZoomSpy).toHaveBeenCalledWith(500, 100);
-            vi.unstubAllGlobals();
+            expect(toggleZoomSpy).toHaveBeenCalledWith('50%', '20%');
         });
 
         it('should default missing coordinates to "0" on "pointerClick"', function () {
@@ -294,7 +292,7 @@ describe('TouchPointerInput', function () {
             instance._onMessageEvent(messageEvent({ type: 'x', data: { type: 'pointerClick', payload: {} } }));
 
             // Then
-            expect(toggleZoomSpy).toHaveBeenCalledWith(0, 0);
+            expect(toggleZoomSpy).toHaveBeenCalledWith('0', '0');
         });
     });
 
@@ -387,8 +385,13 @@ describe('TouchPointerInput', function () {
     });
 
     describe('_toggleZoom()', function () {
+        /** jsdom ne calcule aucun layout : il faut simuler la boîte du frame. */
+        function giveFrameABox(frame: HTMLElement, width: number, height: number): void {
+            vi.spyOn(frame, 'getBoundingClientRect').mockReturnValue({ width, height } as DOMRect);
+        }
+
         it('should do nothing when there is no current slide', function () {
-            expect(() => instance._toggleZoom(1, 2)).not.toThrow();
+            expect(() => instance._toggleZoom('1%', '2%')).not.toThrow();
         });
 
         it('should do nothing when slideViewFrame is missing', function () {
@@ -399,23 +402,50 @@ describe('TouchPointerInput', function () {
             host.attachShadow({ mode: 'open' });
 
             // When / Then
-            expect(() => instance._toggleZoom(1, 2)).not.toThrow();
+            expect(() => instance._toggleZoom('1%', '2%')).not.toThrow();
         });
 
         it('should zoom in and flip the zooming flag when not zoomed', function () {
             // Given
             const { frame } = buildCurrentSlide();
-            vi.stubGlobal('innerWidth', 1000);
-            vi.stubGlobal('innerHeight', 500);
+            giveFrameABox(frame, 800, 600);
+
+            // When un clic au centre du frame
+            instance._toggleZoom('50%', '50%');
+
+            // Then aucune translation nécessaire, seulement l'agrandissement
+            expect(frame.style.transform).toBe('translateX(0px) translateY(0px) scale(2)');
+            expect(frame.style.cursor).toBe('zoom-out');
+            expect(instance.zooming).toBe(true);
+        });
+
+        it('should compute the translation in the frame reference frame, not the window one', function () {
+            // Given une fenêtre bien plus large que le frame : c'est la configuration de
+            // la vue presenter, où le frame n'occupe que 3/5 de la largeur (#41).
+            const { frame } = buildCurrentSlide();
+            giveFrameABox(frame, 800, 600);
+            vi.stubGlobal('innerWidth', 4000);
+            vi.stubGlobal('innerHeight', 3000);
 
             // When
-            instance._toggleZoom(400, 200);
+            instance._toggleZoom('25%', '25%');
 
-            // Then
-            expect(frame.style.cursor).toBe('zoom-out');
-            expect(frame.style.transform).toContain('translateX');
-            expect(instance.zooming).toBe(true);
+            // Then t = 2 * (400 - 200) = 400, plafonné à (2 - 1) * 800 / 2 = 400
+            //      t = 2 * (300 - 150) = 300, plafonné à (2 - 1) * 600 / 2 = 300
+            expect(frame.style.transform).toBe('translateX(400px) translateY(300px) scale(2)');
             vi.unstubAllGlobals();
+        });
+
+        it('should never translate the frame off its own box, even on a corner click', function () {
+            // Given
+            const { frame } = buildCurrentSlide();
+            giveFrameABox(frame, 800, 600);
+
+            // When un clic dans le coin, qui demanderait 2 * 400 = 800 sans plafond
+            instance._toggleZoom('0%', '0%');
+
+            // Then plafonné au recouvrement : la slide reste visible (#41)
+            expect(frame.style.transform).toBe('translateX(400px) translateY(300px) scale(2)');
         });
 
         it('should zoom out and flip the zooming flag when already zoomed', function () {
@@ -424,7 +454,7 @@ describe('TouchPointerInput', function () {
             instance.zooming = true;
 
             // When
-            instance._toggleZoom(0, 0);
+            instance._toggleZoom('0%', '0%');
 
             // Then
             expect(frame.style.cursor).toBe('zoom-in');
