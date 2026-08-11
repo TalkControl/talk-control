@@ -37,6 +37,38 @@ describe('KeyboardInput', function () {
         });
     });
 
+    describe('unload()', function () {
+        // La classe de base remet `initialized` à false : sans détacher les listeners,
+        // une réactivation les enregistrerait une seconde fois (#42).
+        it('should detach both listeners with the same capture flag used to attach them', function () {
+            // Given
+            const removeEventListenerSpy = vi.spyOn(globalThis, 'removeEventListener');
+            instance.init();
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(removeEventListenerSpy).toHaveBeenCalledWith('keyup', expect.any(Function), true);
+            expect(removeEventListenerSpy).toHaveBeenCalledWith('keydown', expect.any(Function), true);
+            expect(instance.initialized).toBe(false);
+        });
+
+        it('should stop forwarding key events once unloaded', function () {
+            // Given
+            instance.init();
+            const callback = vi.fn();
+            instance.onEvent(callback);
+
+            // When
+            instance.unload();
+            dispatchEvent(new KeyboardEvent('keyup', { code: 'ArrowRight', key: 'ArrowRight' }));
+
+            // Then
+            expect(callback).not.toHaveBeenCalled();
+        });
+    });
+
     describe('_captureKeyboardEvent()', function () {
         it('should ignore the event when the active element is an <input>', function () {
             // Given

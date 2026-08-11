@@ -26,6 +26,9 @@ class TouchPointerInput extends Plugin {
     interval: ReturnType<typeof setInterval> | undefined;
     messageEventRegistered = false;
 
+    /** Référence stable, sans laquelle `removeEventListener` serait impossible. */
+    private readonly messageHandler = (message: MessageEvent): void => this._onMessageEvent(message);
+
     constructor() {
         super();
         this.type = 'touchPointerEvent';
@@ -37,7 +40,7 @@ class TouchPointerInput extends Plugin {
         this._addPointer();
 
         if (!this.messageEventRegistered) {
-            addEventListener('message', message => this._onMessageEvent(message));
+            addEventListener('message', this.messageHandler);
             this.messageEventRegistered = true;
         }
         this.initialized = true;
@@ -47,7 +50,39 @@ class TouchPointerInput extends Plugin {
         this._removeSettingsArea();
         this._removeMaskArea();
         this._removePointer();
-        this.initialized = false;
+        this._restoreFrame();
+
+        if (this.messageEventRegistered) {
+            removeEventListener('message', this.messageHandler);
+            this.messageEventRegistered = false;
+        }
+
+        clearInterval(this.interval);
+        this.interval = undefined;
+
+        super.unload();
+    }
+
+    /** Shadow root de la slide courante, ou `undefined` hors vue presenter/on-stage. */
+    _slideShadowRoot(): ShadowRoot | undefined {
+        return document.getElementById('currentSlide')?.shadowRoot ?? undefined;
+    }
+
+    /**
+     * Rend au frame l'apparence qu'il avait avant `_addPointer` : dimensions,
+     * transition, curseur de zoom et transform éventuel. Sans cela, désactiver
+     * le plugin en état zoomé laissait la slide hors cadre, sans retour possible (#42).
+     */
+    _restoreFrame(): void {
+        const frame = this._slideShadowRoot()?.getElementById('slideViewFrame');
+        if (frame) {
+            frame.style.width = '';
+            frame.style.height = '';
+            frame.style.transitionDuration = '';
+            frame.style.cursor = '';
+            frame.style.transform = '';
+        }
+        this.zooming = false;
     }
 
     _addPointer(): void {

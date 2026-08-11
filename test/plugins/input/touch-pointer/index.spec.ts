@@ -86,6 +86,97 @@ describe('TouchPointerInput', function () {
             expect(document.getElementById('placeholder2')?.innerHTML).toBe('');
             expect(instance.initialized).toBe(false);
         });
+
+        // Le teardown était incomplet (#42) : le pointeur partait bien du DOM, mais
+        // callbacks, timer, styles du frame et état de zoom survivaient à la désactivation.
+        it('should drop the accumulated callbacks on unload', function () {
+            // Given
+            instance.init();
+            instance.onEvent(() => {});
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(instance.callbacks).toHaveLength(0);
+        });
+
+        it('should clear the pointer hide-timer on unload', function () {
+            // Given
+            vi.useFakeTimers();
+            const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
+            buildCurrentSlide();
+            instance.init();
+            instance._setPointer('1px', '1px');
+            const timer = instance.interval;
+            expect(timer).toBeDefined();
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(clearIntervalSpy).toHaveBeenCalledWith(timer);
+            expect(instance.interval).toBeUndefined();
+            vi.useRealTimers();
+        });
+
+        it('should restore the frame styles it had applied on unload', function () {
+            // Given
+            const { frame } = buildCurrentSlide();
+            instance.init();
+            expect(frame.style.cursor).toBe('zoom-in');
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(frame.style.cursor).toBe('');
+            expect(frame.style.width).toBe('');
+            expect(frame.style.height).toBe('');
+            expect(frame.style.transitionDuration).toBe('');
+        });
+
+        it('should reset a pending zoom on unload, so the slide is never left off-screen', function () {
+            // Given une désactivation alors que la vue est zoomée
+            const { frame } = buildCurrentSlide();
+            vi.spyOn(frame, 'getBoundingClientRect').mockReturnValue({ width: 800, height: 600 } as DOMRect);
+            instance.init();
+            instance._toggleZoom('0%', '0%');
+            expect(instance.zooming).toBe(true);
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(frame.style.transform).toBe('');
+            expect(instance.zooming).toBe(false);
+        });
+
+        it('should detach the message listener on unload so it can be re-registered later', function () {
+            // Given
+            const removeEventListenerSpy = vi.spyOn(globalThis, 'removeEventListener');
+            instance.init();
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(removeEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function));
+            expect(instance.messageEventRegistered).toBe(false);
+        });
+
+        it('should stop reacting to messages once unloaded', function () {
+            // Given
+            const { shadowRoot } = buildCurrentSlide();
+            instance.init();
+            instance.unload();
+
+            // When un message arrive après la désactivation
+            dispatchEvent(new MessageEvent('message', { data: { type: 'x', data: { type: 'pointerMove', payload: { x: '5%', y: '5%' } } } }));
+
+            // Then rien n'est recréé
+            expect(shadowRoot.getElementById('pointer')).toBeNull();
+        });
     });
 
     describe('_addArea() / _removeArea()', function () {
