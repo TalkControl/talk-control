@@ -86,6 +86,97 @@ describe('TouchPointerInput', function () {
             expect(document.getElementById('placeholder2')?.innerHTML).toBe('');
             expect(instance.initialized).toBe(false);
         });
+
+        // Le teardown était incomplet (#42) : le pointeur partait bien du DOM, mais
+        // callbacks, timer, styles du frame et état de zoom survivaient à la désactivation.
+        it('should drop the accumulated callbacks on unload', function () {
+            // Given
+            instance.init();
+            instance.onEvent(() => {});
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(instance.callbacks).toHaveLength(0);
+        });
+
+        it('should clear the pointer hide-timer on unload', function () {
+            // Given
+            vi.useFakeTimers();
+            const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
+            buildCurrentSlide();
+            instance.init();
+            instance._setPointer('1px', '1px');
+            const timer = instance.interval;
+            expect(timer).toBeDefined();
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(clearIntervalSpy).toHaveBeenCalledWith(timer);
+            expect(instance.interval).toBeUndefined();
+            vi.useRealTimers();
+        });
+
+        it('should restore the frame styles it had applied on unload', function () {
+            // Given
+            const { frame } = buildCurrentSlide();
+            instance.init();
+            expect(frame.style.cursor).toBe('zoom-in');
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(frame.style.cursor).toBe('');
+            expect(frame.style.width).toBe('');
+            expect(frame.style.height).toBe('');
+            expect(frame.style.transitionDuration).toBe('');
+        });
+
+        it('should reset a pending zoom on unload, so the slide is never left off-screen', function () {
+            // Given une désactivation alors que la vue est zoomée
+            const { frame } = buildCurrentSlide();
+            vi.spyOn(frame, 'getBoundingClientRect').mockReturnValue({ width: 800, height: 600 } as DOMRect);
+            instance.init();
+            instance._toggleZoom('0%', '0%');
+            expect(instance.zooming).toBe(true);
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(frame.style.transform).toBe('');
+            expect(instance.zooming).toBe(false);
+        });
+
+        it('should detach the message listener on unload so it can be re-registered later', function () {
+            // Given
+            const removeEventListenerSpy = vi.spyOn(globalThis, 'removeEventListener');
+            instance.init();
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(removeEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function));
+            expect(instance.messageEventRegistered).toBe(false);
+        });
+
+        it('should stop reacting to messages once unloaded', function () {
+            // Given
+            const { shadowRoot } = buildCurrentSlide();
+            instance.init();
+            instance.unload();
+
+            // When un message arrive après la désactivation
+            dispatchEvent(new MessageEvent('message', { data: { type: 'x', data: { type: 'pointerMove', payload: { x: '5%', y: '5%' } } } }));
+
+            // Then rien n'est recréé
+            expect(shadowRoot.getElementById('pointer')).toBeNull();
+        });
     });
 
     describe('_addArea() / _removeArea()', function () {
@@ -272,18 +363,16 @@ describe('TouchPointerInput', function () {
             expect(setPointerColorSpy).toHaveBeenCalledWith('');
         });
 
-        it('should toggle the zoom with converted coordinates on "pointerClick"', function () {
-            // Given
+        it('should forward the raw percentages to the zoom on "pointerClick"', function () {
+            // Given la conversion en pixels se fait dans _toggleZoom, contre le repère du
+            // frame et non celui de la fenêtre (#41).
             const toggleZoomSpy = vi.spyOn(instance, '_toggleZoom');
-            vi.stubGlobal('innerWidth', 1000);
-            vi.stubGlobal('innerHeight', 500);
 
             // When
             instance._onMessageEvent(messageEvent({ type: 'x', data: { type: 'pointerClick', payload: { x: '50%', y: '20%' } } }));
 
             // Then
-            expect(toggleZoomSpy).toHaveBeenCalledWith(500, 100);
-            vi.unstubAllGlobals();
+            expect(toggleZoomSpy).toHaveBeenCalledWith('50%', '20%');
         });
 
         it('should default missing coordinates to "0" on "pointerClick"', function () {
@@ -294,7 +383,7 @@ describe('TouchPointerInput', function () {
             instance._onMessageEvent(messageEvent({ type: 'x', data: { type: 'pointerClick', payload: {} } }));
 
             // Then
-            expect(toggleZoomSpy).toHaveBeenCalledWith(0, 0);
+            expect(toggleZoomSpy).toHaveBeenCalledWith('0', '0');
         });
     });
 
@@ -387,8 +476,13 @@ describe('TouchPointerInput', function () {
     });
 
     describe('_toggleZoom()', function () {
+        /** jsdom ne calcule aucun layout : il faut simuler la boîte du frame. */
+        function giveFrameABox(frame: HTMLElement, width: number, height: number): void {
+            vi.spyOn(frame, 'getBoundingClientRect').mockReturnValue({ width, height } as DOMRect);
+        }
+
         it('should do nothing when there is no current slide', function () {
-            expect(() => instance._toggleZoom(1, 2)).not.toThrow();
+            expect(() => instance._toggleZoom('1%', '2%')).not.toThrow();
         });
 
         it('should do nothing when slideViewFrame is missing', function () {
@@ -399,23 +493,50 @@ describe('TouchPointerInput', function () {
             host.attachShadow({ mode: 'open' });
 
             // When / Then
-            expect(() => instance._toggleZoom(1, 2)).not.toThrow();
+            expect(() => instance._toggleZoom('1%', '2%')).not.toThrow();
         });
 
         it('should zoom in and flip the zooming flag when not zoomed', function () {
             // Given
             const { frame } = buildCurrentSlide();
-            vi.stubGlobal('innerWidth', 1000);
-            vi.stubGlobal('innerHeight', 500);
+            giveFrameABox(frame, 800, 600);
+
+            // When un clic au centre du frame
+            instance._toggleZoom('50%', '50%');
+
+            // Then aucune translation nécessaire, seulement l'agrandissement
+            expect(frame.style.transform).toBe('translateX(0px) translateY(0px) scale(2)');
+            expect(frame.style.cursor).toBe('zoom-out');
+            expect(instance.zooming).toBe(true);
+        });
+
+        it('should compute the translation in the frame reference frame, not the window one', function () {
+            // Given une fenêtre bien plus large que le frame : c'est la configuration de
+            // la vue presenter, où le frame n'occupe que 3/5 de la largeur (#41).
+            const { frame } = buildCurrentSlide();
+            giveFrameABox(frame, 800, 600);
+            vi.stubGlobal('innerWidth', 4000);
+            vi.stubGlobal('innerHeight', 3000);
 
             // When
-            instance._toggleZoom(400, 200);
+            instance._toggleZoom('25%', '25%');
 
-            // Then
-            expect(frame.style.cursor).toBe('zoom-out');
-            expect(frame.style.transform).toContain('translateX');
-            expect(instance.zooming).toBe(true);
+            // Then t = 2 * (400 - 200) = 400, plafonné à (2 - 1) * 800 / 2 = 400
+            //      t = 2 * (300 - 150) = 300, plafonné à (2 - 1) * 600 / 2 = 300
+            expect(frame.style.transform).toBe('translateX(400px) translateY(300px) scale(2)');
             vi.unstubAllGlobals();
+        });
+
+        it('should never translate the frame off its own box, even on a corner click', function () {
+            // Given
+            const { frame } = buildCurrentSlide();
+            giveFrameABox(frame, 800, 600);
+
+            // When un clic dans le coin, qui demanderait 2 * 400 = 800 sans plafond
+            instance._toggleZoom('0%', '0%');
+
+            // Then plafonné au recouvrement : la slide reste visible (#41)
+            expect(frame.style.transform).toBe('translateX(400px) translateY(300px) scale(2)');
         });
 
         it('should zoom out and flip the zooming flag when already zoomed', function () {
@@ -424,7 +545,7 @@ describe('TouchPointerInput', function () {
             instance.zooming = true;
 
             // When
-            instance._toggleZoom(0, 0);
+            instance._toggleZoom('0%', '0%');
 
             // Then
             expect(frame.style.cursor).toBe('zoom-in');

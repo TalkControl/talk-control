@@ -20,6 +20,14 @@ export class SlideViewComponent extends TcStyledElement {
             width: 100%;
             height: 100%;
         }
+        /* Filet de sécurité du zoom (#41) : le plugin touch-pointer applique un
+           transform scale() sur l'iframe. Sans clipping, une translation erronée
+           projette la slide par-dessus le reste de la vue presenter — voire hors
+           de l'écran. La géométrie est corrigée dans touch-pointer/zoom.ts ; ceci
+           garantit qu'aucune régression future ne puisse repeindre hors du cadre. */
+        section {
+            overflow: hidden;
+        }
         section.fullscreen {
             width: 100vw;
             height: 100vh;

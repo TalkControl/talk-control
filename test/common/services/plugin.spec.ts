@@ -1,6 +1,7 @@
 import { loadPluginModule } from '@plugins/plugin-loader';
 import { logger } from '@services/logger';
 import pluginService from '@services/plugin';
+import { Plugin } from '@plugins/plugin';
 
 vi.mock('@plugins/plugin-loader');
 
@@ -230,6 +231,29 @@ describe('Plugin service', function () {
                 threw = true;
             }
             expect(threw).toBe(false);
+        });
+
+        // Régression #42 : c'est ici que la fuite se matérialisait. Mesuré sur l'app
+        // réelle avant correctif, le tableau `callbacks` du singleton grimpait à 1, 2,
+        // puis 3 sur trois cycles activer/désactiver, et chaque événement du plugin
+        // partait en autant d'exemplaires.
+        it('should not accumulate callbacks across activate/unload cycles', async function () {
+            // Given un vrai Plugin plutôt qu'un mock : le contrat testé est celui de la classe de base
+            const pluginName = 'pluginName';
+            const pluginInstance = new Plugin();
+            pluginInstance.type = 'type';
+            vi.mocked(loadPluginModule).mockResolvedValue({ instance: pluginInstance });
+            const host = { controllerComponentChannel: { broadcast: vi.fn() } };
+
+            // When trois cycles complets
+            for (let cycle = 0; cycle < 3; cycle++) {
+                await pluginService.activateOnComponent(pluginName, host as any);
+                pluginInstance.unload();
+            }
+            await pluginService.activateOnComponent(pluginName, host as any);
+
+            // Then un seul callback, celui du cycle courant
+            expect(pluginInstance.callbacks).toHaveLength(1);
         });
     });
 });

@@ -41,6 +41,25 @@ describe('TouchInput', function () {
         });
     });
 
+    describe('unload()', function () {
+        // Même contrat que keyboard : la base remet `initialized` à false, donc les
+        // listeners doivent partir sous peine d'être doublés au réactivage (#42).
+        it('should detach both listeners with the same capture flag used to attach them', function () {
+            // Given
+            const removeEventListenerSpy = vi.spyOn(globalThis, 'removeEventListener');
+            instance.init();
+
+            // When
+            instance.unload();
+
+            // Then
+            expect(removeEventListenerSpy).toHaveBeenCalledWith('touchstart', expect.any(Function), false);
+            expect(removeEventListenerSpy).toHaveBeenCalledWith('touchend', expect.any(Function), false);
+            expect(instance.initialized).toBe(false);
+            vi.restoreAllMocks();
+        });
+    });
+
     describe('_captureTouchEvent()', function () {
         it('should do nothing when the event has no view', function () {
             // Given
