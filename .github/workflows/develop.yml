@@ -39,6 +39,48 @@ jobs:
               run: npm run lint:check
 
     # ----------------------------------------------------------------
+    # Job 1bis — Audit des dépendances
+    #
+    # `npm audit` figurait dans scripts/verify.sh mais dans aucun job : les
+    # vulnérabilités remontaient en local et passaient en CI. Cinq failles high
+    # (nanoid, postcss, socket.io-parser, undici, brace-expansion) ont ainsi
+    # vécu sur develop sans rien faire échouer.
+    #
+    # `npm audit` sort en code non nul dès qu'il trouve quelque chose au niveau
+    # demandé — c'est ce qui fait échouer le job, aucune commande de plus n'est
+    # nécessaire.
+    #
+    # Seuil `high` et non le défaut (`null` = échec sur n'importe quelle
+    # sévérité, jusqu'à `info`). `npm audit` interroge la base d'avis du registre
+    # à l'instant du run : le lockfile est gelé, la base ne l'est pas. Un avis
+    # publié entre deux commits rend donc rouge la PR suivante, quel qu'en soit
+    # l'auteur et le sujet. Au seuil par défaut, un simple `low` sur une
+    # transitive de build suffirait à bloquer un contributeur sur un problème
+    # qui n'est pas le sien. `high` cadre le job sur ce qui justifie une
+    # interruption. scripts/verify.sh applique le même seuil pour ne pas diverger ;
+    # pour la photo complète (low et moderate compris), lancer `npm audit` sans
+    # option. Les alertes Dependabot du dépôt couvrent la veille de fond.
+    # ----------------------------------------------------------------
+    audit:
+        name: Dependency audit — Node 24
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v7
+
+            - name: Setup Node 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: '24'
+                  cache: 'npm'
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Audit dependencies (high and above)
+              run: npm audit --audit-level=high
+
+    # ----------------------------------------------------------------
     # Job 2 — TypeScript strict
     # ----------------------------------------------------------------
     typecheck:

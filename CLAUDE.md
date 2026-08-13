@@ -42,7 +42,15 @@ Avant commit / PR — **validation complète, miroir de la CI** (`.github/workfl
 
 soit : `tsc --noEmit`, `lint:check`, `NODE_ENV=test npm run coverage` (jsdom + browser + merge —
 les suites tournent DANS coverage, ne pas les relancer à part : IMP-013), `test:e2e` (Playwright
-démarre lui-même les 3 services), `build`, `npm audit` (0 vulnérabilité attendu), `docs:build`.
+démarre lui-même les 3 services), `build`, `npm audit --audit-level=high` (0 vulnérabilité `high`
+ou `critical` attendu — même seuil que le job CI `audit` ; `npm audit` sans option montre aussi
+les `low`/`moderate`, qui ne bloquent pas), `docs:build`.
+
+Le script couvre les mêmes contrôles que la CI, mais **il n'en est pas la copie exacte** : la
+correspondance vaut job par job, pas ligne par ligne. Avant de conclure « la CI échoue déjà
+là-dessus » à partir d'un échec local, vérifier que le contrôle en question a bien un job dans
+`.github/workflows/develop.yml` — `npm audit` n'en avait aucun jusqu'à la mise en place du job
+`audit`, et un échec local ne rendait donc pas la CI rouge.
 
 ## Contrat iso-fonctionnel
 
