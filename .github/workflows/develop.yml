@@ -1,12 +1,19 @@
-name: Develop CI — Node 24
+# Nom de fichier historique (`develop.yml`) : le workflow couvre aussi `main`
+# depuis qu'on a constaté que les PR vers la branche par défaut ne déclenchaient
+# strictement aucun contrôle — les PR Dependabot #68/#69/#70 affichaient
+# « no checks reported ». Renommer le fichier casserait les liens existants vers
+# les runs, on garde donc le nom et on corrige l'intitulé.
+name: CI — Node 24
 
 on:
     push:
         branches:
             - develop
+            - main
     pull_request:
         branches:
             - develop
+            - main
 
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
