@@ -52,6 +52,11 @@ là-dessus » à partir d'un échec local, vérifier que le contrôle en questio
 `.github/workflows/develop.yml` — `npm audit` n'en avait aucun jusqu'à la mise en place du job
 `audit`, et un échec local ne rendait donc pas la CI rouge.
 
+Le workflow s'appelle `develop.yml` pour des raisons historiques mais couvre **`develop` ET `main`**
+(push et pull_request). Avant, aucune PR vers `main` — la branche par défaut, cible des PR
+Dependabot — ne déclenchait le moindre contrôle. Seul `docs-deploy` reste conditionné à
+`refs/heads/develop` et skippe sur `main`.
+
 ## Contrat iso-fonctionnel
 
 `docs/migration/golden-path.md` fait foi : le comportement utilisateur décrit là est le contrat,
