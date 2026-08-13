@@ -49,6 +49,17 @@ jobs:
     # `npm audit` sort en code non nul dès qu'il trouve quelque chose au niveau
     # demandé — c'est ce qui fait échouer le job, aucune commande de plus n'est
     # nécessaire.
+    #
+    # Seuil `high` et non le défaut (`null` = échec sur n'importe quelle
+    # sévérité, jusqu'à `info`). `npm audit` interroge la base d'avis du registre
+    # à l'instant du run : le lockfile est gelé, la base ne l'est pas. Un avis
+    # publié entre deux commits rend donc rouge la PR suivante, quel qu'en soit
+    # l'auteur et le sujet. Au seuil par défaut, un simple `low` sur une
+    # transitive de build suffirait à bloquer un contributeur sur un problème
+    # qui n'est pas le sien. `high` cadre le job sur ce qui justifie une
+    # interruption. scripts/verify.sh applique le même seuil pour ne pas diverger ;
+    # pour la photo complète (low et moderate compris), lancer `npm audit` sans
+    # option. Les alertes Dependabot du dépôt couvrent la veille de fond.
     # ----------------------------------------------------------------
     audit:
         name: Dependency audit — Node 24
@@ -66,8 +77,8 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Audit dependencies
-              run: npm audit
+            - name: Audit dependencies (high and above)
+              run: npm audit --audit-level=high
 
     # ----------------------------------------------------------------
     # Job 2 — TypeScript strict

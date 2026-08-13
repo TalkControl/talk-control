@@ -27,7 +27,10 @@ run "lint        " npm run lint:check
 run "coverage    " env NODE_ENV=test npm run coverage
 run "e2e         " npm run test:e2e
 run "build       " npm run build
-run "audit       " npm audit
+# Même seuil que le job `audit` de la CI : un écart ferait échouer ici ce qui passe
+# là-bas (ou l'inverse), et ce script sert justement de garde avant PR.
+# Pour la photo complète, low et moderate compris : `npm audit` sans option.
+run "audit       " npm audit --audit-level=high
 run "docs        " npm run docs:build
 
 echo ""
