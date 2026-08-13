@@ -9,6 +9,11 @@ interface TouchPosition {
 class TouchInput extends Plugin {
     touchPosition: { touchstart: TouchPosition; touchend: TouchPosition };
 
+    // Références stables : sans elles, removeEventListener n'a aucune prise et
+    // `unload()` laisserait les listeners actifs derrière lui (#42).
+    private readonly onTouchStart = (event: TouchEvent): void => this._captureTouchEvent(event);
+    private readonly onTouchEnd = (event: TouchEvent): void => this._captureTouchEvent(event, true);
+
     constructor() {
         super();
         this.type = 'inputEvent';
@@ -19,9 +24,15 @@ class TouchInput extends Plugin {
     }
 
     override init(): void {
-        addEventListener('touchstart', this._captureTouchEvent.bind(this), false);
-        addEventListener('touchend', e => this._captureTouchEvent(e, true), false);
+        addEventListener('touchstart', this.onTouchStart, false);
+        addEventListener('touchend', this.onTouchEnd, false);
         this.initialized = true;
+    }
+
+    override unload(): void {
+        removeEventListener('touchstart', this.onTouchStart, false);
+        removeEventListener('touchend', this.onTouchEnd, false);
+        super.unload();
     }
 
     _captureTouchEvent(event: TouchEvent, forward = false): void {

@@ -1,5 +1,6 @@
 import { Plugin } from '@plugins/plugin.js';
 import { logger } from '@services/logger';
+import { ZOOM_SCALE, computeZoomTransform } from './zoom';
 
 interface PointerState {
     x: string;
@@ -25,6 +26,9 @@ class TouchPointerInput extends Plugin {
     interval: ReturnType<typeof setInterval> | undefined;
     messageEventRegistered = false;
 
+    /** Référence stable, sans laquelle `removeEventListener` serait impossible. */
+    private readonly messageHandler = (message: MessageEvent): void => this._onMessageEvent(message);
+
     constructor() {
         super();
         this.type = 'touchPointerEvent';
@@ -36,7 +40,7 @@ class TouchPointerInput extends Plugin {
         this._addPointer();
 
         if (!this.messageEventRegistered) {
-            addEventListener('message', message => this._onMessageEvent(message));
+            addEventListener('message', this.messageHandler);
             this.messageEventRegistered = true;
         }
         this.initialized = true;
@@ -46,7 +50,39 @@ class TouchPointerInput extends Plugin {
         this._removeSettingsArea();
         this._removeMaskArea();
         this._removePointer();
-        this.initialized = false;
+        this._restoreFrame();
+
+        if (this.messageEventRegistered) {
+            removeEventListener('message', this.messageHandler);
+            this.messageEventRegistered = false;
+        }
+
+        clearInterval(this.interval);
+        this.interval = undefined;
+
+        super.unload();
+    }
+
+    /** Shadow root de la slide courante, ou `undefined` hors vue presenter/on-stage. */
+    _slideShadowRoot(): ShadowRoot | undefined {
+        return document.getElementById('currentSlide')?.shadowRoot ?? undefined;
+    }
+
+    /**
+     * Rend au frame l'apparence qu'il avait avant `_addPointer` : dimensions,
+     * transition, curseur de zoom et transform éventuel. Sans cela, désactiver
+     * le plugin en état zoomé laissait la slide hors cadre, sans retour possible (#42).
+     */
+    _restoreFrame(): void {
+        const frame = this._slideShadowRoot()?.getElementById('slideViewFrame');
+        if (frame) {
+            frame.style.width = '';
+            frame.style.height = '';
+            frame.style.transitionDuration = '';
+            frame.style.cursor = '';
+            frame.style.transform = '';
+        }
+        this.zooming = false;
     }
 
     _addPointer(): void {
@@ -155,10 +191,10 @@ class TouchPointerInput extends Plugin {
         }
 
         if (messageData.type === 'pointerClick') {
-            this._toggleZoom(
-                this._convertPercentToCoordinates(messageData.payload.x ?? '0', window.innerWidth),
-                this._convertPercentToCoordinates(messageData.payload.y ?? '0', window.innerHeight)
-            );
+            // Les coordonnées arrivent en POURCENTAGE de la zone de masque : elles ne sont
+            // converties en pixels qu'à l'intérieur de _toggleZoom, dans le repère du frame
+            // (cf. zoom.ts). Les convertir ici contre la fenêtre était le bug #41.
+            this._toggleZoom(messageData.payload.x ?? '0', messageData.payload.y ?? '0');
         }
     }
 
@@ -192,7 +228,7 @@ class TouchPointerInput extends Plugin {
         }
     }
 
-    _toggleZoom(mouseX: number, mouseY: number): void {
+    _toggleZoom(xPercent: string, yPercent: string): void {
         const currentSlide = document.getElementById('currentSlide');
         if (!currentSlide || !currentSlide.shadowRoot) {
             return;
@@ -204,23 +240,29 @@ class TouchPointerInput extends Plugin {
         }
 
         if (this.zooming) {
-            element.style.transform = 'translate3D(0px, 0px, 0px)';
-            element.style.cursor = 'zoom-in';
-            this.zooming = !this.zooming;
+            this._resetZoom(element);
             return;
         }
 
-        const scaleValue = 2;
-        const windowCenterX = window.innerWidth / 2;
-        const windowCenterY = window.innerHeight / 2;
-        const targetX = Math.round((windowCenterX - mouseX) * scaleValue);
-        const targetY = Math.round((windowCenterY - mouseY) * scaleValue);
+        // getBoundingClientRect() plutôt que offsetWidth : on ne passe ici qu'en état
+        // dézoomé, donc le rect vaut la boîte de mise en page, et il tient compte d'un
+        // éventuel scale porté par un ancêtre.
+        const box = element.getBoundingClientRect();
+        const point = {
+            x: this._convertPercentToCoordinates(xPercent, box.width),
+            y: this._convertPercentToCoordinates(yPercent, box.height)
+        };
+        const translation = computeZoomTransform(box, point, ZOOM_SCALE);
 
-        if (!this.zooming) {
-            element.style.transform = `translateX(${targetX}px) translateY(${targetY}px) scale(${scaleValue})`;
-            element.style.cursor = 'zoom-out';
-            this.zooming = !this.zooming;
-        }
+        element.style.transform = `translateX(${Math.round(translation.x)}px) translateY(${Math.round(translation.y)}px) scale(${ZOOM_SCALE})`;
+        element.style.cursor = 'zoom-out';
+        this.zooming = true;
+    }
+
+    _resetZoom(element: HTMLElement): void {
+        element.style.transform = 'translate3D(0px, 0px, 0px)';
+        element.style.cursor = 'zoom-in';
+        this.zooming = false;
     }
 
     _convertPercentToCoordinates(percentValue: string, size: number): number {
