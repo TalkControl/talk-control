@@ -1,0 +1,43 @@
+schema: spec-driven
+
+context: |
+    Project: TalkControl — télécommande de présentations reveal.js
+    One presenter at a time (IMP-002).
+
+    Architecture (3 services):
+    - tc-server (port 3001): Express 5 + socket.io, patcher/proxy des présentations, moteur d'état
+    - controller + component (port 3000): Vite dev server, layouts (presenter, on-stage…), web components Lit
+    - showcase (port 3002): présentation reveal.js d'exemple (http-server)
+
+    Flux: controller ↔ serveur ↔ component via event-bus typé (TcEventMap, 21 événements).
+    Pairing par session socket.io: token UUID opaque `?s=`, rooms `session:<id>`.
+    Store serveur maison (~35 lignes, src/server/store/), union discriminée TcAction.
+    Plugins auto-découverts par import.meta.glob, activation pilotée par config/plugins.json.
+
+    Tech stack:
+    - Node 24, TypeScript strict, Vite 8 (Rolldown/oxc), Vitest 4, Playwright e2e
+    - Lit 3 (décorateurs LEGACY experimentalDecorators:true — ne pas migrer vers TC39)
+    - Express 5, socket.io 4, Bulma 1, VitePress 2-alpha + TypeDoc
+
+    Conventions:
+    - Commits Gitmoji en français (ex: ✨ feat(server): ajouter X)
+    - Branches: feat|fix|chore|test/<slug>
+    - KISS d'abord, SOLID, TDD quand approprié
+    - Ne pas renommer les variables/clés existantes sans nécessité fonctionnelle
+    - Coverage: ne jamais baisser les seuils (80/90/70/80)
+
+    Validation rapide: tsc --noEmit && npm run lint:check && NODE_ENV=test npm test
+    Validation complète (CI): ./scripts/verify.sh
+
+rules:
+    proposal:
+        - Toujours mentionner l'impact sur les 3 services (tc-server, controller, showcase)
+        - Indiquer si un nouvel événement TcEventMap est nécessaire
+        - Préciser si des tests e2e Playwright sont à ajouter ou modifier
+    tasks:
+        - Découper en tâches de max 2h
+        - Chaque tâche doit mentionner les fichiers concernés
+        - Les tâches de test précèdent les tâches d'implémentation (TDD)
+    design:
+        - Mentionner les décisions IMP-XXX existantes impactées
+        - Documenter dans docs/improvements/decisions.md si décision structurante

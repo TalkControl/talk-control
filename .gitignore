@@ -77,3 +77,15 @@ config/config.json
 .claude/*
 !.claude/settings.json
 !.claude/review-guidelines.md
+!.claude/commands/
+!.claude/commands/opsx/
+!.claude/skills/
+!.claude/skills/openspec-apply-change/
+!.claude/skills/openspec-archive-change/
+!.claude/skills/openspec-continue-change/
+!.claude/skills/openspec-explore/
+!.claude/skills/openspec-new-change/
+!.claude/skills/openspec-onboard/
+!.claude/skills/openspec-propose/
+!.claude/skills/openspec-sync-specs/
+!.claude/skills/openspec-verify-change/
